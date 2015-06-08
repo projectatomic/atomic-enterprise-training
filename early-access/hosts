@@ -1,0 +1,5 @@
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6                           
+192.168.133.2 ae-master.example.com ae-master                                                        
+192.168.133.3 ae-node1.example.com ae-node1                                                          
+192.168.133.4 ae-node2.example.com ae-node2
