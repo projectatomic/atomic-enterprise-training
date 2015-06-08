@@ -58,11 +58,6 @@
     - [Deleting a Project](#deleting-a-project)
   - [The Registry](#the-registry)
     - [Registry Placement By Region (optional)](#registry-placement-by-region-optional)
-  - [Arbitrary Docker Image (Builder)](#arbitrary-docker-image-builder)
-    - [Create a Project](#create-a-project)
-    - [Build Wordpress](#build-wordpress)
-    - [Test Your Application](#test-your-application)
-    - [Application Resource Labels](#application-resource-labels)
   - [Conclusion](#conclusion)
 - [APPENDIX - DNSMasq setup](#appendix---dnsmasq-setup)
     - [Verifying DNSMasq](#verifying-dnsmasq)
@@ -240,7 +235,6 @@ On all of your systems, grab the following docker images:
 
     docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2
     docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.3.2
     docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.3.2
     docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2
 
@@ -1726,112 +1720,6 @@ This will be a Very.Bad.Thing.
 [//]: # (TODO: Are templates instantiable without UI?)
 [//]: # (TODO: update the wiring example so that it doesn't require STI)
 [//]: # (TODO: update the rollback example so that it doens't require STI)
-
-## Arbitrary Docker Image (Builder)
-One of the first things we did with AE was launch an "arbitrary" Docker
-image from the Docker Hub. However, we can also build Docker images from Docker
-files, too. While this is a "build" process, it's not a "source-to-image"
-process -- we're not working with only a source code repo.
-
-As an example, the CentOS community maintains a Wordpress all-in-one Docker
-image:
-
-    https://github.com/CentOS/CentOS-Dockerfiles/tree/master/wordpress/centos7
-
-[//]: # (TODO: move openshift/centos7-wordpress ??)
-
-We've taken the content of this subfolder and placed it in the GitHub
-`openshift/centos7-wordpress` repository. Let's run `oc new-app` and see what
-happens:
-
-    oc new-app https://github.com/openshift/centos7-wordpress.git -o yaml
-
-This all looks good for now.
-
-### Create a Project
-As `root`, create a new project for Wordpress for `alice`:
-
-    oadm new-project wordpress --display-name="Wordpress" \
-    --description='Building an arbitrary Wordpress Docker image' \
-    --admin=alice
-
-As `alice`:
-
-    oc project wordpress
-
-### Build Wordpress
-Let's choose the Wordpress example:
-
-[//]: # (TODO: move repository??)
-
-    oc new-app -l name=wordpress https://github.com/openshift/centos7-wordpress.git
-
-    services/centos7-wordpress
-    imageStreams/centos7-wordpress
-    buildConfigs/centos7-wordpress
-    deploymentConfigs/centos7-wordpress
-    Service "centos7-wordpress" created at 172.30.17.91:22 to talk to pods over port 22.
-    A build was created - you can run `osc start-build centos7-wordpress` to start it.
-
-Then, start the build:
-
-    oc start-build centos7-wordpress
-
-**Note: This can take a *really* long time to build.**
-
-You will need a route for this application, as `curl` won't do a whole lot for
-us here. Additionally, `oc new-app` currently has a bug in the way services are
-detected, so we'll have a service for SSH (thus port 22 above) but not one for
-httpd. So we'll add on a service and route for web access.
-
-    oc create -f wordpress-addition.json
-
-**Note:** If you're not using the `example.com` domain, you'll have to edit this
-route to match your domain.
-
-### Test Your Application
-You should be able to visit:
-
-    http://wordpress.cloudapps.example.com
-
-Check it out!
-
-Remember - not only did we use an arbitrary Docker image, we actually built the
-Docker image using Atomic Enterprise. Technically there was no "code repository". So, if
-you allow it, developers can actually simply build Docker containers as their
-"apps" and run them directly on OpenShift.
-
-### Application Resource Labels
-
-You may have wondered about the `-l name=wordpress` in the invocation above. This
-applies a label to all of the resources created by `oc new-app` so that they can
-be easily distinguished from any other resources in a project. For example, we
-can easily delete only the things with this label:
-
-    oc delete all -l name=wordpress
-
-    buildConfigs/centos7-wordpress
-    builds/centos7-wordpress-1
-    deploymentConfigs/centos7-wordpress
-    imageStreams/centos7-wordpress
-    pods/centos7-wordpress-1
-    pods/centos7-wordpress-1-j64ck
-    replicationControllers/centos7-wordpress-1
-    services/centos7-wordpress
-
-Notice that the things we created from wordpress-addition.json didn't
-have this label, so they didn't get deleted:
-
-    oc get services
-
-    NAME                      LABELS    SELECTOR                             IP             PORT(S)
-    wordpress-httpd-service   <none>    deploymentconfig=centos7-wordpress   172.30.17.83   80/TCP
-
-    osc get route
-
-    NAME              HOST/PORT                         PATH      SERVICE                   LABELS
-    wordpress-route   wordpress.cloudapps.example.com             wordpress-httpd-service
-
 [//]: # (TODO: can EAP example be modified to not require STI??)
 
 ## Conclusion
