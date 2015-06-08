@@ -1793,8 +1793,6 @@ something like the following on your connected machine:
 
     docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2
     docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.3.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.3.2
     docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.3.2
     docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2
     docker pull registry.access.redhat.com/openshift3_beta/ruby-20-rhel7
@@ -1808,8 +1806,6 @@ This will fetch all of the images. You can then save them to a tarball:
     docker save -o beta3-images.tar \
     registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2 \
     registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.3.2 \
-    registry.access.redhat.com/openshift3_beta/ose-sti-builder:v0.4.3.2 \
-    registry.access.redhat.com/openshift3_beta/ose-docker-builder:v0.4.3.2 \
     registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.3.2 \
     registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2 \
     registry.access.redhat.com/openshift3_beta/ruby-20-rhel7 \
@@ -2119,7 +2115,6 @@ The output will be similar to:
 [//]: # (TODO: result["ansible_facts"]["openshift"])
 [//]: # (TODO: use_openshift_sdn ??)
 
-
     ok: [10.3.9.45] => {
         "result": {
             "ansible_facts": {
@@ -2148,7 +2143,6 @@ The output will be similar to:
 Next, we'll need to override the detected defaults if they are not what we expect them to be
 
 [//]: # (TODO: take care of openshift* variables)
-
 
 - hostname
   * Should resolve to the internal ip from the instances themselves.
@@ -2262,5 +2256,3 @@ On Mac OSX and Linux you will need to make the file executable
 
 In the future users will be able to download clients directly from the Atomic Enterprise
 console rather than needing to visit Customer Portal.
-
-
