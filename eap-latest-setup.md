@@ -2,7 +2,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [Atomic Enterprise Platform Early Access](#atomi-enterprise-platform-early-access)
+- [Atomic Enterprise Platform Early Access Program](#atomi-enterprise-platform-early-access-program)
   - [Architecture and Requirements](#architecture-and-requirements)
     - [Architecture](#architecture)
     - [Requirements](#requirements)
@@ -91,7 +91,7 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# Atomic Enterprise Platform Early Access
+# Atomic Enterprise Platform Early Access Program
 ## Architecture and Requirements
 ### Architecture
 The documented architecture for the early access testing is pretty simple. There are
@@ -324,7 +324,7 @@ Github. Clone the repository:
 ### Configure Ansible
 Copy the staged Ansible configuration files to `/etc/ansible`:
 
-    /bin/cp -r ~/training/early-access/ansible/* /etc/ansible/
+    /bin/cp -r ~/training/eap-latest/ansible/* /etc/ansible/
 
 ### Modify Hosts
 If you are not using the "example.com" domain and the training example
@@ -465,7 +465,7 @@ environment. It is now time to create the classic "Hello World" application
 using some sample code.  But, first, some housekeeping.
 
 Also, don't forget, the materials for these labs are in your
-`~/training/early-access` folder.
+`~/training/eap-latest` folder.
 
 ### "Resources"
 There are a number of different resource types in AE, and, essentially,
@@ -524,7 +524,7 @@ two quotas to the same namespace.
 
 ### Applying Quota to Projects
 At this point we have created our "demo" project, so let's apply the quota above
-to it. Still in a `root` terminal in the `training/early-access` folder:
+to it. Still in a `root` terminal in the `training/eap-latest` folder:
 
     oc create -f quota.json --namespace=demo
 
@@ -611,10 +611,10 @@ go ahead and grab it inside Joe's home folder:
 
     cd
     git clone https://github.com/projectatomic/atomic-enterprise-training.git training
-    cd ~/training/early-access
+    cd ~/training/eap-latest
 
 ### The Hello World Definition JSON
-In the `early-access` training folder, you can see the contents of our pod definition by using
+In the `eap-latest` training folder, you can see the contents of our pod definition by using
 `cat`:
 
 [//]: # (TODO: make a new hello-openshift image and correct "image" attr below)
@@ -871,7 +871,7 @@ Then, create `/etc/openshift/scheduler.json` from the training materials:
 
 [//]: # (TODO: /etc/openshift/ -> ???)
 
-    /bin/cp -r ~/training/early-access/scheduler.json /etc/openshift/
+    /bin/cp -r ~/training/eap-latest/scheduler.json /etc/openshift/
 
 It will have the following content:
 
@@ -1003,7 +1003,7 @@ Check the results to ensure the labels were applied:
 
 Now there is one final step that is necessary due to a [caching
 bug](https://github.com/openshift/origin/issues/1727#issuecomment-94518311)
-which is not fixed for early-access. Each node needs to be restarted with:
+which is not fixed for Early Access. Each node needs to be restarted with:
 
 [//]: # (TODO: check the service name)
 
@@ -1223,7 +1223,7 @@ multiple, clustered router instances.
 With a router now available, let's take a look at an entire
 Pod-Service-Route definition template and put all the pieces together.
 
-Don't forget -- the materials are in `~/training/early-access`.
+Don't forget -- the materials are in `~/training/eap-latest`.
 
 ### Creating the Definition
 The following is a complete definition for a pod with a corresponding service
@@ -1594,7 +1594,7 @@ cleanup routine to finish.
 Once the project disappears from `oc get project`, doing `oc get pod -n demo`
 should return no results.
 
-Note: As of the early-access, a user with the `edit` role can actually delete the project.
+Note: As of the Early Access, a user with the `edit` role can actually delete the project.
 [This will be fixed](https://github.com/openshift/origin/issues/1885).
 
 
@@ -1710,7 +1710,7 @@ Once you save this file and exit, the DeploymentConfig will be updated and
 a new registry deployment will soon be created with the new definition.
 
 If you are going to move the registry, do it now or don't do it all. As
-dedicated storage volumes did not make the early-access drop, restarting the
+dedicated storage volumes did not make the Early Access drop, restarting the
 registry pod will result in an empty registry -- all the images will be lost.
 This will be a Very.Bad.Thing.
 
@@ -1844,7 +1844,7 @@ to limit some of what it returns:
 
 An experimental diagnostics command is in progress for Atomic Enterprise, to hopefully
 be included in the origin binary for the next release. For now, you can download
-the one for early-access under [Luke Meyer's release page](https://github.com/sosiouxme/origin/releases).
+the one for Early Access under [Luke Meyer's release page](https://github.com/sosiouxme/origin/releases).
 Running this may save you some time by pointing you in the right direction
 for common issues. This is very much still under development however.
 

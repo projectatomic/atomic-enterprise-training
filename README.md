@@ -10,9 +10,9 @@ and what that release covers.
 
 **Work in proggress**
 
-## Early Access
+## Early Access Program
 The following is an overview of the Atomic Enterprise (AE) features covered in
-Early Access:
+Early Access Program training:
 - Installation and configuration of AE and atomic-sdn
 - Adding nodes to the master
 - Extensive command line use
@@ -34,5 +34,5 @@ Early Access:
 [//]: # (- Rollback / Activate)
 [//]: # (- Templates/Quickstarts from the console)
 
-[The specific documentation for Early Access is here.](ea-setup.md)
+[The specific documentation for Early Access is here.](eap-latest-setup.md)
 
