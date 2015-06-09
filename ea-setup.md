@@ -263,7 +263,7 @@ On your master, it makes sense to clone the training git repository:
 [//]: # (TODO: fix the git url)
 
     cd
-    git clone https://github.com/miminar/projectatomic/atomic-enterprise-training.git training
+    git clone https://github.com/projectatomic/atomic-enterprise-training.git training
 
 **REMINDER**
 Almost all of the files for this training are in the training folder you just
@@ -328,7 +328,7 @@ Copy the staged Ansible configuration files to `/etc/ansible`:
 
 ### Modify Hosts
 If you are not using the "example.com" domain and the training example
-hostnames, modify /etc/ansible/hosts accordingly. Do not adjust the commented
+hostnames, modify `/etc/ansible/hosts` accordingly. Do not adjust the commented
 lines (`#`) at this time.
 
 ### Run the Ansible Installer
@@ -395,9 +395,9 @@ installing:
 
 From there, we can create a password for our users, Joe and Alice:
 
-    touch /etc/openshift-passwd
-    htpasswd -b /etc/openshift-passwd joe redhat
-    htpasswd -b /etc/openshift-passwd alice redhat
+    touch /etc/atomic-passwd
+    htpasswd -b /etc/atomic-passwd joe redhat
+    htpasswd -b /etc/atomic-passwd alice redhat
 
 [//]: # (TODO: fix the /etc/openshift/master.yaml path)
 
@@ -411,7 +411,7 @@ The Atomic Enterprise configuration is kept in a YAML file which currently lives
       name: apache_auth
       provider:
         apiVersion: v1
-        file: /etc/ae-passwd
+        file: /etc/atomic-passwd
         kind: HTPasswdPasswordIdentityProvider
 
 More information on these configuration settings can be found here:
@@ -426,12 +426,12 @@ If you're feeling lazy, use your friend `sed`:
 
     sed -i -e 's/name: anypassword/name: apache_auth/' \
     -e 's/kind: AllowAllPasswordIdentityProvider/kind: HTPasswdPasswordIdentityProvider/' \
-    -e '/kind: HTPasswdPasswordIdentityProvider/i \      file: \/etc\/openshift-passwd' \
+    -e '/kind: HTPasswdPasswordIdentityProvider/i \      file: \/etc\/atomic-passwd' \
     /etc/openshift/master.yaml
 
-Restart `openshift-master`:
+Restart `atomic-master`:
 
-    systemctl restart openshift-master
+    systemctl restart atomic-master
 
 ### A Project for Everything
 Atomic Enterprise (AE) has a concept of "projects" to contain a number of
@@ -610,7 +610,7 @@ go ahead and grab it inside Joe's home folder:
 [//]: # (TODO: set this to the right repository)
 
     cd
-    git clone https://github.com/miminar/projectatomic/atomic-enterprise-training.git training
+    git clone https://github.com/projectatomic/atomic-enterprise-training.git training
     cd ~/training/early-access
 
 ### The Hello World Definition JSON
@@ -651,8 +651,6 @@ AE further.
 ### Run the Pod
 To create the pod from our JSON file, execute the following:
 
-[//]: # (TODO: oc -> ???)
-
     oc create -f hello-pod.json
 
 Remember, we've "logged in" to AE and our project, so this will create
@@ -678,7 +676,7 @@ to 6061 on the host and bound to 8080 on the container, along with several other
 [//]: # (TODO: correct names, images and container IDs)
 
     CONTAINER ID        IMAGE                              COMMAND              CREATED             STATUS              PORTS                    NAMES
-    ded86f750698        openshift/hello-openshift:v0.4.3   "/hello-openshift"   7 minutes ago       Up 7 minutes                                 k8s_hello-openshift.9ac8152d_hello-openshift_demo_18d03b48-0089-11e5-98b9-525400616fe9_c43c7d54   
+    ded86f750698        openshift/hello-openshift:v0.4.3   "/hello-openshift"   7 minutes ago       Up 7 minutes                                 k8s_hello-openshift.9ac8152d_hello-openshift_demo_18d03b48-0089-11e5-98b9-525400616fe9_c43c7d54
     405d63115a60        openshift3_beta/ose-pod:v0.4.3.2   "/pod"               7 minutes ago       Up 7 minutes        0.0.0.0:6061->8080/tcp   k8s_POD.a01602bc_hello-openshift_demo_18d03b48-0089-11e5-98b9-525400616fe9_dffebcf1     
 
 [//]: # (TODO: openshift3_beta/ -> ???)
