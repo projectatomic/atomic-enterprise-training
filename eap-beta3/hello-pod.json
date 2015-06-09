@@ -1,0 +1,22 @@
+{
+  "id": "hello-atomic",
+  "kind": "Pod",
+  "apiVersion":"v1beta2",
+  "labels": {
+    "name": "hello-atomic"
+  },
+  "desiredState": {
+    "manifest": {
+      "version": "v1beta1",
+      "id": "hello-atomic",
+      "containers": [{
+        "name": "hello-atomic",
+        "image": "openshift/hello-openshift:v0.4.3",
+        "ports": [{
+          "hostPort": 6061,
+          "containerPort": 8080
+        }]
+      }]
+    }
+  }
+}

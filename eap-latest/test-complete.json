@@ -1,116 +1,115 @@
 {
-  "metadata":{
-    "name":"hello-service-pod-meta"
+  "kind": "Config",
+  "apiVersion": "v1beta3",
+  "metadata": {
+    "name": "hello-service-complete-example"
   },
-  "kind":"Config",
-  "apiVersion":"v1beta1",
-  "creationTimestamp":"2014-09-18T18:28:38-04:00",
-  "items":[
+  "items": [
     {
-      "id": "hello-atomic-service",
       "kind": "Service",
-      "apiVersion": "v1beta1",
-      "port": 27017,
-      "containerPort": 8080,
-      "selector": {
-        "name": "hello-atomic"
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "hello-atomic-service"
+      },
+      "spec": {
+        "selector": {
+          "name": "hello-atomic"
+        },
+        "ports": [
+          {
+            "protocol": "TCP",
+            "port": 27017,
+            "targetPort": 8080
+          }
+        ]
       }
     },
     {
       "kind": "Route",
-      "apiVersion": "v1beta1",
+      "apiVersion": "v1beta3",
       "metadata": {
         "name": "hello-atomic-route"
       },
-      "id": "hello-atomic-route",
-      "host": "hello-atomic.cloudapps.example.com",
-      "serviceName": "hello-atomic-service"
-    },
-    {
-      "apiVersion": "v1beta1",
-      "kind": "ImageStream",
-      "metadata": {
-        "name": "hello-atomic"
+      "spec": {
+        "host": "hello-atomic.cloudapps.example.com",
+        "to": {
+          "name": "hello-atomic-service"
+        },
+        "tls": {
+          "termination": "edge"
+        }
       }
     },
     {
-        "kind": "DeploymentConfig",
-        "apiVersion": "v1beta1",
-        "metadata": {
-            "name": "hello-atomic"
+      "kind": "DeploymentConfig",
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "hello-atomic"
+      },
+      "spec": {
+        "strategy": {
+          "type": "Recreate",
+          "resources": {}
         },
         "triggers": [
-            {
-              "imageChangeParams": {
-                "automatic": true,
-                "containerNames": [
-                  "hello-atomic"
-                ],
-                "from": {
-                  "name": "hello-openshift"
-                },
-                "tag": "latest"
-              },
-              "type": "ImageChange"
-            },
-            {
-              "type": "ConfigChange"
-            }
+          {
+            "type": "ConfigChange"
+          }
         ],
-        "template": {
-            "strategy": {
-                "type": "Recreate"
-            },
-            "controllerTemplate": {
-                "replicas": 1,
-                "replicaSelector": {
-                    "name": "hello-atomic"
-                },
-                "podTemplate": {
-                    "desiredState": {
-                        "manifest": {
-                            "version": "v1beta2",
-                            "id": "",
-                            "volumes": null,
-                            "containers": [
-                                {
-                                    "name": "hello-atomic",
-                                    "image": "openshift/hello-openshift:v0.4.3",
-                                    "ports": [
-                                        {
-                                            "containerPort": 8080,
-                                            "protocol": "TCP"
-                                        }
-                                    ],
-                                    "resources": {},
-                                    "livenessProbe": {
-                                        "tcpSocket": {
-                                            "port": 8080
-                                        },
-                                        "timeoutSeconds": 1,
-                                        "initialDelaySeconds": 10
-                                    },
-                                    "terminationMessagePath": "/dev/termination-log",
-                                    "imagePullPolicy": "PullIfNotPresent",
-                                    "capabilities": {}
-                                }
-                            ],
-                            "restartPolicy": {
-                                "always": {}
-                            },
-                            "dnsPolicy": "ClusterFirst"
-                        }
-                    },
-                    "nodeSelector": {
-                      "region": "primary"
-                    },
-                    "labels": {
-                        "name": "hello-atomic"
-                    }
-                }
-            }
+        "replicas": 1,
+        "selector": {
+          "name": "hello-atomic"
         },
-        "latestVersion": 1
+        "template": {
+          "metadata": {
+            "creationTimestamp": null,
+            "labels": {
+              "name": "hello-atomic"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "hello-atomic",
+                "image": "openshift/hello-openshift:v0.4.3",
+                "ports": [
+                  {
+                    "name": "hello-atomic-tcp-8080",
+                    "containerPort": 8080,
+                    "protocol": "TCP"
+                  }
+                ],
+                "resources": {
+                  "limits": {
+                    "cpu": "10m",
+                    "memory": "16Mi"
+                  }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "imagePullPolicy": "PullIfNotPresent",
+                "capabilities": {},
+                "securityContext": {
+                  "capabilities": {},
+                  "privileged": false
+                },
+                "livenessProbe": {
+                  "tcpSocket": {
+                    "port": 8080
+                  },
+                  "timeoutSeconds": 1,
+                  "initialDelaySeconds": 10
+                }
+              }
+            ],
+            "restartPolicy": "Always",
+            "dnsPolicy": "ClusterFirst",
+            "serviceAccount": "",
+            "nodeSelector": {
+              "region": "primary"
+            }
+          }
+        }
+      }
     }
   ]
 }

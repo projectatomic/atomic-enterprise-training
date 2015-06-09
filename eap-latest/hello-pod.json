@@ -1,22 +1,46 @@
 {
-  "id": "hello-atomic",
   "kind": "Pod",
-  "apiVersion":"v1beta2",
-  "labels": {
-    "name": "hello-atomic"
+  "apiVersion": "v1beta3",
+  "metadata": {
+    "name": "hello-atomic",
+    "creationTimestamp": null,
+    "labels": {
+      "name": "hello-atomic"
+    }
   },
-  "desiredState": {
-    "manifest": {
-      "version": "v1beta1",
-      "id": "hello-atomic",
-      "containers": [{
+  "spec": {
+    "containers": [
+      {
         "name": "hello-atomic",
         "image": "openshift/hello-openshift:v0.4.3",
-        "ports": [{
-          "hostPort": 6061,
-          "containerPort": 8080
-        }]
-      }]
-    }
-  }
+        "ports": [
+          {
+            "hostPort": 36061,
+            "containerPort": 8080,
+            "protocol": "TCP"
+          }
+        ],
+        "resources": {
+          "limits": {
+            "cpu": "10m",
+            "memory": "16Mi"
+          }
+        },
+        "terminationMessagePath": "/dev/termination-log",
+        "imagePullPolicy": "IfNotPresent",
+        "capabilities": {},
+        "securityContext": {
+          "capabilities": {},
+          "privileged": false
+        },
+        "nodeSelector": {
+          "region": "primary"
+        }
+      }
+    ],
+    "restartPolicy": "Always",
+    "dnsPolicy": "ClusterFirst",
+    "serviceAccount": ""
+  },
+  "status": {}
 }

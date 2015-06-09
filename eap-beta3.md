@@ -12,7 +12,6 @@
     - [Assumptions](#assumptions)
     - [Git](#git)
     - [Preparing Each VM](#preparing-each-vm)
-    - [Docker Storage Setup (optional, recommended)](#docker-storage-setup-optional-recommended)
     - [Grab Docker Images (Optional, Recommended)](#grab-docker-images-optional-recommended)
     - [Clone the Training Repository](#clone-the-training-repository)
   - [Ansible-based Installer](#ansible-based-installer)
@@ -48,10 +47,8 @@
     - [Label Your Nodes](#label-your-nodes)
   - [Services](#services)
   - [Routing](#routing)
-    - [Creating a Wildcard Certificate](#creating-a-wildcard-certificate)
     - [Creating the Router](#creating-the-router)
     - [Router Placement By Region](#router-placement-by-region)
-    - [Viewing Router Stats](#viewing-router-stats)
   - [The Complete Pod-Service-Route](#the-complete-pod-service-route)
     - [Creating the Definition](#creating-the-definition)
     - [Project Status](#project-status)
@@ -80,14 +77,21 @@
   - [Future Considerations](#future-considerations)
 - [APPENDIX - Installing in IaaS Clouds](#appendix---installing-in-iaas-clouds)
   - [Generic Cloud Install](#generic-cloud-install)
+    - [An Example Hosts File (/etc/ansible/hosts)](#an-example-hosts-file-etcansiblehosts)
+    - [Testing the Auto-detected Values](#testing-the-auto-detected-values)
   - [Automated AWS Install With Ansible](#automated-aws-install-with-ansible)
+    - [Requirements:](#requirements)
+    - [Assumptions Made:](#assumptions-made)
+    - [Setup (Modifying the Values Appropriately):](#setup-modifying-the-values-appropriately)
+    - [Configuring the Hosts:](#configuring-the-hosts)
+    - [Accessing the Hosts:](#accessing-the-hosts)
 - [APPENDIX - Linux, Mac, and Windows clients](#appendix---linux-mac-and-windows-clients)
   - [Downloading The Clients](#downloading-the-clients)
   - [Log In To Your Atomic Environment](#log-in-to-your-atomic-environment)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# Atomic Enterprise Platform Early Access
+# Atomic Enterprise Platform Early Access Program
 ## Architecture and Requirements
 ### Architecture
 The documented architecture for the early access testing is pretty simple. There are
@@ -109,8 +113,9 @@ the inner workings of Atomic throughout the rest of the document.
 Each of the virtual machines should have 4+ GB of memory, 20+ GB of disk space,
 and the following configuration:
 
-* RHEL or RHEL AH >=7.1 (Note: 7.1 kernel is required for openvswitch)
+* RHEL 7.1 or RHEL AH 7.1 (Note: 7.1 kernel is required for openvswitch)
 * "Minimal" installation option
+* NetworkManager **disabled**
 
 The majority of storage requirements are related to Docker and etcd (the data
 store). Both of their contents live in /var, so it is recommended that the
@@ -125,30 +130,17 @@ them to the *Atomic Enterprise High Touch Beta* subscription.
 All of your VMs should be on the same logical network and be able to access one
 another.
 
-In almost all cases, when referencing VMs you must use hostnames and the
-hostnames that you use must match the output of `hostname -f` on each of your
-nodes. Forward DNS resolution of hostnames is an **absolute requirement**. This
+Forward DNS resolution of hostnames is an **absolute requirement**. This
 training document assumes the following configuration:
 
 * ae-master.example.com (master+node)
 * ae-node1.example.com
 * ae-node2.example.com
 
-We do our best to point out where you will need to change things if your
-hostnames do not match.
-
 If you cannot create real forward resolving DNS entries in your DNS system, you
 will need to set up your own DNS server in the beta testing environment.
 Documentation is provided on DNSMasq in an appendix, [APPENDIX - DNSMasq
 setup](#appendix---dnsmasq-setup)
-
-Remember that NetworkManager may make changes to your DNS
-configuration/resolver/etc. You will need to properly configure your interfaces'
-DNS settings and/or configure NetworkManager appropriately.
-
-More information on NetworkManager can be found in this comment:
-
-    https://github.com/openshift/training/issues/193#issuecomment-105693742
 
 ## Setting Up the Environment
 ### Use a Terminal Window Manager
@@ -165,6 +157,11 @@ with a low TTL, that points to the public IP address of your master.
 For example:
 
     *.cloudapps.example.com. 300 IN  A 192.168.133.2
+
+In almost all cases, when referencing VMs you must use hostnames and the
+hostnames that you use must match the output of `hostname -f` on each of your
+nodes. By extension, you must at least have all hostname/ip mappings in
+/etc/hosts files or forward DNS should work.
 
 It is possible to use dnsmasq inside of your beta environment to handle these
 duties. See the [appendix on dnsmasq](#appendix---dnsmasq-setup) if you can't
@@ -196,7 +193,7 @@ can:
         --enable="rhel-7-server-optional-rpms" \
         --enable="rhel-server-7-ose-beta-rpms"
 
-    **Note:** You will have had to register/attach your system first.  Also,
+    **Note:** You will have to register/attach your system first.
     *rhel-server-7-ose-beta-rpms* is not a typo.  The name will change at GA to be
     consistent with the RHEL channel names.
 
@@ -210,6 +207,10 @@ On **each** VM:
 
         yum -y install deltarpm
 
+1. Remove NetworkManager:
+
+        yum -y remove NetworkManager*
+
 1. Install missing packages:
 
         yum -y install wget vim-enhanced net-tools bind-utils tmux git
@@ -218,70 +219,13 @@ On **each** VM:
 
         yum -y update
 
-### Docker Storage Setup (optional, recommended)
-**IMPORTANT:** The default docker storage configuration uses loopback devices
-and is not appropriate for production. Red Hat considers the dm.thinpooldev
-storage option to be the only appropriate configuration for production use.
-
-If you want to configure the storage for Docker, you'll need to first install
-Docker, as the installer currently does not auto-configure this storage setup
-for you.
-
-    yum -y install docker
-
-Make sure that you are running at least `docker-1.6.2-6.el7.x86_64`.
-
-In order to use dm.thinpooldev you must have an LVM thinpool available, the
-`docker-storage-setup` package will assist you in configuring LVM. However you
-must provision your host to fit one of these three scenarios :
-
-*  Root filesystem on LVM with free space remaining on the volume group. Run
-`docker-storage-setup` with no additional configuration, it will allocate the
-remaining space for the thinpool.
-
-*  A dedicated LVM volume group where you'd like to reate your thinpool
-
-        echo <<EOF > /etc/sysconfig/docker-storage-setup
-        VG=docker-vg
-        SETUP_LVM_THIN_POOL=yes
-        EOF
-        docker-storage-setup
-
-*  A dedicated block device, which will be used to create a volume group and thinpool
-
-        cat <<EOF > /etc/sysconfig/docker-storage-setup
-        DEVS=/dev/vdc
-        VG=docker-vg
-        SETUP_LVM_THIN_POOL=yes
-        EOF
-        docker-storage-setup
-
-Once complete you should have a thinpool named `docker-pool` and docker should
-be configured to use it in `/etc/sysconfig/docker-storage`.
-
-    # lvs
-    LV                  VG        Attr       LSize  Pool Origin Data%  Meta% Move Log Cpy%Sync Convert
-    docker-pool         docker-vg twi-a-tz-- 48.95g             0.00   0.44
-
-    # cat /etc/sysconfig/docker-storage
-    DOCKER_STORAGE_OPTIONS=--storage-opt dm.fs=xfs --storage-opt dm.thinpooldev=/dev/mapper/openshift--vg-docker--pool
-
-**Note:** If you had previously used docker with loopback storage you should
-clean out `/var/lib/docker` This is a destructive operation and will delete all
-images and containers on the host.
-
-    systemctl stop docker
-    rm -rf /var/lib/docker/*
-    systemctl start docker
-
 ### Grab Docker Images (Optional, Recommended)
 **If you want** to pre-fetch Docker images to make the first few things in your
-environment happen **faster**, you'll need to first install Docker if you didn't
-install it when (optionally) configuring the Docker storage previously.
+environment happen **faster**, you'll need to first install Docker:
 
     yum -y install docker
 
-Make sure that you are running at least `docker-1.6.2-6.el7.x86_64`.
+Make sure that you are running at least `docker-1.6.0-6.el7.x86_64`.
 
 You'll need to add `--insecure-registry 0.0.0.0/0` to your
 `/etc/sysconfig/docker` `OPTIONS`. Then:
@@ -290,10 +234,10 @@ You'll need to add `--insecure-registry 0.0.0.0/0` to your
 
 On all of your systems, grab the following docker images:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.5.2.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2
 
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
@@ -318,25 +262,14 @@ update".
 ### Clone the Training Repository
 On your master, it makes sense to clone the training git repository:
 
+[//]: # (TODO: fix the git url)
+
     cd
     git clone https://github.com/projectatomic/atomic-enterprise-training.git training
 
 **REMINDER**
 Almost all of the files for this training are in the training folder you just
 cloned.
-
-### Add Development Users
-In the "real world" your developers would likely be using the OpenShift tools on
-their own machines (`osc` and the web console). For the Early Access training, we
-will create user accounts for two non-privileged users of OpenShift, *joe* and
-*alice*, on the master. This is done for convenience and because we'll be using
-`htpasswd` for authentication.
-
-    useradd joe
-    useradd alice
-
-We will come back to these users later. Remember to do this on the `master`
-system, and not the nodes.
 
 [//]: # (TODO: check that ansible intaller will be ready)
 
@@ -387,17 +320,18 @@ Github. Clone the repository:
 [//]: # (TODO: provide ansible repo/branch and path)
 
     cd
-    git clone https://github.com/detiber/openshift-ansible.git -b v3-beta4
+    git clone https://github.com/detiber/openshift-ansible.git -b v3-beta3
     cd ~/openshift-ansible
 
 ### Configure Ansible
 Copy the staged Ansible configuration files to `/etc/ansible`:
 
-    /bin/cp -r ~/training/eap-latest/ansible/* /etc/ansible/
+    /bin/cp -r ~/training/eap-beta3/ansible/* /etc/ansible/
 
 ### Modify Hosts
 If you are not using the "example.com" domain and the training example
-hostnames, modify `/etc/ansible/hosts` accordingly.
+hostnames, modify `/etc/ansible/hosts` accordingly. Do not adjust the commented
+lines (`#`) at this time.
 
 ### Run the Ansible Installer
 Now we can simply run the Ansible installer:
@@ -414,190 +348,18 @@ Effectively, Ansible is going to install and configure both the master and node
 software on `ae-master.example.com`. Later, we will modify the Ansible
 configuration to add the extra nodes.
 
-There was also some information about "regions" and "zones" in the hosts file.
-Let's talk about those concepts now.
+### Add Development Users
 
-## Regions and Zones
-If you think you're about to learn how to configure regions and zones in
-Atomic Enterprise, you're only partially correct.
+In the "real world" your developers would likely be using the Atomic tools on
+their own machines (e.g. `oc`). For the early access training, we
+will create user accounts for two non-privileged users of Atomic, *joe* and
+*alice*, on the master. This is done for convenience and because we'll be using
+`htpasswd` for authentication.
 
-In OpenShift 2, we introduced the specific concepts of "regions" and "zones" to
-enable organizations to provide some topologies for application resiliency. Apps
-would be spread throughout the zones in a region and, depending on the way you
-configured AE, you could make different regions accessible to users.
+    useradd joe
+    useradd alice
 
-The reason that you're only "partially" correct in your assumption is that, for
-OpenShift 3 and Atomic Enterprise, Kubernetes doesn't actually care about your
-topology. In other words, AE is "topology agnostic". In fact, AE provides
-advanced controls for implementing whatever topologies you can dream up,
-leveraging filtering and affinity rules to ensure that parts of applications
-(pods) are either grouped together or spread apart.
-
-For the purposes of a simple example, we'll be sticking with the "regions" and
-"zones" theme. But, as you go through these examples, think about what other
-complex topologies you could implement. Perhaps "secure" and "insecure" hosts,
-or other topologies.
-
-First, we need to talk about the "scheduler" and its default configuration.
-
-### Scheduler and Defaults
-The "scheduler" is essentially the Atomic master. Any time a pod needs to be
-created (instantiated) somewhere, the master needs to figure out where to do
-this. This is called "scheduling". The default configuration for the scheduler
-looks like the following JSON (although this is embedded in the Origin code
-and you won't find this in a file):
-
-    {
-      "predicates" : [
-        {"name" : "PodFitsResources"},
-        {"name" : "MatchNodeSelector"},
-        {"name" : "HostName"},
-        {"name" : "PodFitsPorts"},
-        {"name" : "NoDiskConflict"}
-      ],"priorities" : [
-        {"name" : "LeastRequestedPriority", "weight" : 1},
-        {"name" : "ServiceSpreadingPriority", "weight" : 1}
-      ]
-    }
-
-When the scheduler tries to make a decision about pod placement, first it goes
-through "predicates", which essentially filter out the possible nodes we can
-choose. Note that, depending on your predicate configuration, you might end up
-with no possible nodes to choose. This is totally OK (although generally not
-desired).
-
-These default options are documented in the link above, but the quick overview
-is:
-
-* Place pod on a node that has enough resources for it (duh)
-* Place pod on a node that doesn't have a port conflict (duh)
-* Place pod on a node that doesn't have a storage conflict (duh)
-
-And some more obscure ones:
-
-* Place pod on a node whose `NodeSelector` matches
-* Place pod on a node whose hostname matches the `Host` attribute value
-
-The next thing is, of the available nodes after the filters are applied, how do
-we select the "best" one. This is where "priorities" come in. Long story short,
-the various priority functions each get a score, multiplied by the weight, and
-the node with the highest score is selected to host the pod.
-
-Again, the defaults are:
-
-* Choose the node that is "least requested" (the least busy)
-* Spread services around - minimize the number of pods in the same service on
-    the same node
-
-And, for an extremely detailed explanation about what these various
-configuration flags are doing, check out:
-
-[//]: # (TODO: docs.openshift.org -> ???)
-
-    http://docs.openshift.org/latest/admin_guide/scheduler.html
-
-In a small environment, these defaults are pretty sane. Let's look at one of the
-important predicates (filters) before we move on to "regions" and "zones".
-
-### The NodeSelector
-`NodeSelector` is a part of the Pod data model. And, if we think back to our pod
-definition, there was a "label", which is just a key:value pair. In the case of
-a `NodeSelector`, our labels (key:value pairs) are used to help us try to find
-nodes that match, assuming that:
-
-* The scheduler is configured to MatchNodeSelector
-* The end user creating the pod knows which labels are out there
-
-But this use case is also pretty simplistic. It doesn't really allow for a
-topology, and there's not a lot of logic behind it. Also, if I specify a
-NodeSelector label when using MatchNodeSelector and there are no matching nodes,
-my workload will never get scheduled. Bummer.
-
-How can we make this more intelligent? We'll finally use "regions" and "zones".
-
-### Customizing the Scheduler Configuration
-[//]: # (TODO: /etc/openshift -> ??)
-
-The Ansible installer is configured to understand "regions" and "zones" as a
-matter of convenience. However, for the master (scheduler) to actually do
-something with them requires changing from the default configuration Take a look
-at `/etc/openshift/master/master-config.yaml` and find the line with `schedulerConfigFile`.
-
-[//]: # (TODO: /etc/openshift -> ??)
-
-You should see:
-
-    schedulerConfigFile: "/etc/openshift/master/scheduler.json"
-
-Then, take a look at `/etc/openshift/master/scheduler.json`. It will have the
-following content:
-
-    {
-      "predicates" : [
-        {"name" : "PodFitsResources"},
-        {"name" : "PodFitsPorts"},
-        {"name" : "NoDiskConflict"},
-        {"name" : "Region", "argument" : {"serviceAffinity" : { "labels" : ["region"]}}}
-      ],"priorities" : [
-        {"name" : "LeastRequestedPriority", "weight" : 1},
-        {"name" : "ServiceSpreadingPriority", "weight" : 1},
-        {"name" : "Zone", "weight" : 2, "argument" : {"serviceAntiAffinity" : { "label" : "zone" }}}
-      ]
-    }
-
-To quickly review the above (this explanation sort of assumes that you read the
-scheduler documentation, but it's not critically important):
-
-* Filter out nodes that don't fit the resources, don't have the ports, or have
-    disk conflicts
-* If the pod specifies a label with the key "region", filter nodes by the value.
-
-So, if we have the following nodes and the following labels:
-
-* Node 1 -- "region":"infra"
-* Node 2 -- "region":"primary"
-* Node 3 -- "region":"primary"
-
-If we try to schedule a pod that has a `NodeSelector` of "region":"primary",
-then only Node 1 and Node 2 would be considered.
-
-OK, that takes care of the "region" part. What about the "zone" part?
-
-Our priorities tell us to:
-
-* Score the least-busy node higher
-* Score any nodes who don't already have a pod in this service higher
-* Score any nodes whose zone label's value **does not** match higher
-
-Why do we score a zone that **doesn't** match higher? Note that the definition
-for the Zone priority is a `serviceAntiAffinity` -- anti affinity. In this case,
-our anti affinity rule helps to ensure that we try to get nodes from *different*
-zones to take our pod.
-
-If we consider that our "primary" region might be a certain datacenter, and that
-each "zone" in that datacenter might be on its own power system with its own
-dedicated networking, this would ensure that, within the datacenter, pods of an
-application would be spread across power/network segments.
-
-The documentation link has some more complicated examples. The topoligical
-possibilities are endless!
-
-### Node Labels
-The assignments of "regions" and "zones" at the node-level are handled by labels
-on the nodes. You can look at how the labels were implemented by doing:
-
-    oc get nodes
-    NAME                    LABELS                                                                   STATUS
-    ae-master.example.com   kubernetes.io/hostname=ae-master.example.com,region=infra,zone=default   Ready
-    ae-node1.example.com    kubernetes.io/hostname=ae-node1.example.com,region=primary,zone=east     Ready
-    ae-node2.example.com    kubernetes.io/hostname=ae-node2.example.com,region=primary,zone=west     Ready
-
-At this point we have a running AE environment across three hosts, with
-one master and three nodes, divided up into two regions -- "*infra*structure"
-and "primary".
-
-From here we will start to deploy "applications" and other resources into
-AE.
+We will come back to these users later.
 
 ## Useful Logs
 RHEL 7 uses `systemd` and `journal`. As such, looking at logs is not a matter of
@@ -613,6 +375,8 @@ window:
 
     journalctl -f -u atomic-master
     journalctl -f -u atomic-node
+    journalctl -f -u atomic-sdn-master
+    journalctl -f -u atomic-sdn-node
 
 **Note:** You will want to do this on the other nodes, but you won't need the
 "-master" service. You may also wish to watch the Docker logs, too.
@@ -639,8 +403,8 @@ From there, we can create a password for our users, Joe and Alice:
 [//]: # (TODO: fix the /etc/openshift/master.yaml path)
 
 The Atomic Enterprise configuration is kept in a YAML file which currently lives at
-`/etc/openshift/master/master-config.yaml`. Ansible was configured to edit
-the `oauthConfig`'s `identityProviders` stanza so that it looks like the following:
+`/etc/openshift/master.yaml`. We need to edit the `oauthConfig`'s
+`identityProviders` stanza so that it looks like the following:
 
     identityProviders:
     - challenge: true
@@ -651,24 +415,36 @@ the `oauthConfig`'s `identityProviders` stanza so that it looks like the followi
         file: /etc/atomic-passwd
         kind: HTPasswdPasswordIdentityProvider
 
-More information on these configuration settings (and other identity providers) can be found here:
+More information on these configuration settings can be found here:
 
 [//]: # (TODO: Will we have something like docs.automic.org ?)
 
     http://docs.openshift.org/latest/admin_guide/configuring_authentication.html#HTPasswdPasswordIdentityProvider
 
+If you're feeling lazy, use your friend `sed`:
+
+[//]: # (TODO: fix the /etc/openshift/master.yaml path)
+
+    sed -i -e 's/name: anypassword/name: apache_auth/' \
+    -e 's/kind: AllowAllPasswordIdentityProvider/kind: HTPasswdPasswordIdentityProvider/' \
+    -e '/kind: HTPasswdPasswordIdentityProvider/i \      file: \/etc\/atomic-passwd' \
+    /etc/openshift/master.yaml
+
+Restart `atomic-master`:
+
+    systemctl restart atomic-master
+
 ### A Project for Everything
 Atomic Enterprise (AE) has a concept of "projects" to contain a number of
-different resources:
-services and their pods, builds and so on. They are somewhat similar to
-"namespaces" in OpenShift v2. We'll explore what this means in more details
-throughout the rest of the labs. Let's create a project for our first
-application.
+different resources: services and their pods, builds and so on. They are
+somewhat similar to "namespaces" in OpenShift v2. We'll explore what this means
+in more details throughout the rest of the labs. Let's create a project for our
+first application.
 
 We also need to understand a little bit about users and administration. The
 default configuration for CLI operations currently is to be the `master-admin`
 user, which is allowed to create projects. We can use the "admin"
-Atomic command to create a project, and assign an administrative user to it:
+AE command to create a project, and assign an administrative user to it:
 
     oadm new-project demo --display-name="Atomic Enterprise Demo" \
     --description="This is the first demo project with Atomic Enterprise" \
@@ -690,7 +466,7 @@ environment. It is now time to create the classic "Hello World" application
 using some sample code.  But, first, some housekeeping.
 
 Also, don't forget, the materials for these labs are in your
-`~/training/eap-latest` folder.
+`~/training/eap-beta3` folder.
 
 ### "Resources"
 There are a number of different resource types in AE, and, essentially,
@@ -749,7 +525,7 @@ two quotas to the same namespace.
 
 ### Applying Quota to Projects
 At this point we have created our "demo" project, so let's apply the quota above
-to it. Still in a `root` terminal in the `training/eap-latest` folder:
+to it. Still in a `root` terminal in the `training/eap-beta3` folder:
 
     oc create -f quota.json --namespace=demo
 
@@ -776,27 +552,6 @@ And if you want to verify limits or examine usage:
 processed. If you get blank output from the `get` or `describe` commands, wait a
 few moments and try again.
 
-### Applying Limit Ranges to Projects
-In order for quotas to be effective you need to also create Limit Ranges
-which set the maximum, minimum, and default allocations of memory and cpu at
-both a pod and container level. Without default values for containers projects
-with quotas will fail because the deployer and other infrastructure pods are
-unbounded and therefore forbidden.
-
-As `root` in the `training/eap-latest` folder:
-
-    oc create -f limits.json --namespace=demo
-
-Review your limit ranges
-    oc describe limitranges limits -n demo
-    Name:           limits
-    Type            Resource        Min     Max     Default
-    ----            --------        ---     ---     ---
-    Pod             memory          5Mi     750Mi   -
-    Pod             cpu             10m     500m    -
-    Container       cpu             10m     500m    100m
-    Container       memory          5Mi     750Mi   100Mi
-
 ### Login
 Since we have taken the time to create the *joe* user as well as a project for
 him, we can log into a terminal as *joe* and then set up the command line
@@ -811,7 +566,7 @@ Then, execute:
 [//]: # (TODO: /var/lib/openshift/openshift.local.certificates -> ???)
 
     oc login -u joe \
-    --certificate-authority=/etc/openshift/master/ca.crt \
+    --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
     --server=https://ae-master.example.com:8443
 
 Atomic Enterprise, by default, is using a self-signed SSL certificate, so we must point
@@ -825,20 +580,20 @@ folder. Take a look at it, and you'll see something like the following:
     apiVersion: v1
     clusters:
     - cluster:
-        certificate-authority: ../../../../etc/openshift/master/ca.crt
+        certificate-authority: /var/lib/openshift/openshift.local.certificates/ca/cert.crt
         server: https://ae-master.example.com:8443
       name: ae-master-example-com-8443
     contexts:
     - context:
         cluster: ae-master-example-com-8443
         namespace: demo
-        user: joe/ae-master-example-com:8443
-      name: demo/ae-master-example-com:8443/joe
-    current-context: demo/ae-master-example-com:8443/joe
+        user: joe
+      name: demo
+    current-context: demo
     kind: Config
     preferences: {}
     users:
-    - name: joe/ose3-master-example-com:8443
+    - name: joe
       user:
         token: ZmQwMjBiZjUtYWE3OC00OWE1LWJmZTYtM2M2OTY2OWM0ZGIw
 
@@ -857,60 +612,36 @@ go ahead and grab it inside Joe's home folder:
 
     cd
     git clone https://github.com/projectatomic/atomic-enterprise-training.git training
-    cd ~/training/eap-latest
+    cd ~/training/eap-beta3
 
 ### The Hello World Definition JSON
-In the `eap-latest` training folder, you can see the contents of our pod definition by
-using `cat`:
+In the `eap-beta3` training folder, you can see the contents of our pod definition by using
+`cat`:
 
 [//]: # (TODO: make a new hello-openshift image and correct "image" attr below)
 
     cat hello-pod.json
     {
+      "id": "hello-atomic",
       "kind": "Pod",
-      "apiVersion": "v1beta3",
-      "metadata": {
-        "name": "hello-atomic",
-        "creationTimestamp": null,
-        "labels": {
-          "name": "hello-atomic"
-        }
+      "apiVersion":"v1beta2",
+      "labels": {
+        "name": "hello-atomic"
       },
-      "spec": {
-        "containers": [
-          {
+      "desiredState": {
+        "manifest": {
+          "version": "v1beta1",
+          "id": "hello-atomic",
+          "containers": [{
             "name": "hello-atomic",
             "image": "openshift/hello-openshift:v0.4.3",
-            "ports": [
-              {
-                "hostPort": 36061,
-                "containerPort": 8080,
-                "protocol": "TCP"
-              }
-            ],
-            "resources": {
-              "limits": {
-                "cpu": "10m",
-                "memory": "16Mi"
-              }
-            },
-            "terminationMessagePath": "/dev/termination-log",
-            "imagePullPolicy": "IfNotPresent",
-            "capabilities": {},
-            "securityContext": {
-              "capabilities": {},
-              "privileged": false
-            },
-            "nodeSelector": {
-              "region": "primary"
-            }
-          }
-        ],
-        "restartPolicy": "Always",
-        "dnsPolicy": "ClusterFirst",
-        "serviceAccount": ""
-      },
-      "status": {}
+            "ports": [{
+              "hostPort": 6061,
+              "containerPort": 8080
+            }]
+          }]
+        }
+      }
     }
 
 In the simplest sense, a *pod* is an application or an instance of something. If
@@ -919,7 +650,7 @@ Reality is more complex, and we will learn more about the terms as we explore
 AE further.
 
 ### Run the Pod
-As `joe`, to create the pod from our JSON file, execute the following:
+To create the pod from our JSON file, execute the following:
 
     oc create -f hello-pod.json
 
@@ -936,15 +667,12 @@ Issue a `get pods` to see the details of how it was defined:
     POD           IP         CONTAINER(S)  IMAGE(S)                           HOST                                  LABELS              STATUS    CREATED
     hello-atomic  10.1.0.6   hello-atomic  openshift/hello-openshift:v0.4.3   ae-master.example.com/192.168.133.2   name=hello-atomic   Running   10 seconds
 
-The output of this command shows all of the Docker containers in a pod, which
-explains some of the spacing.
-
 [//]: # (TODO: openshift3_beta/ -> ???)
 
-On the node where the pod is running (`HOST`), look at the list of Docker
-containers with `docker ps` (in a `root` terminal) to see the bound ports.  We
-should see an `openshift3_beta/ose-pod` container bound to 36061 on the host and
-bound to 8080 on the container, along with several other `ose-pod` containers.
+Look at the list of Docker containers with `docker ps` (in a `root` terminal) to
+see the bound ports.  We should see an `openshift3_beta/ose-pod` container bound
+to 6061 on the host and bound to 8080 on the container, along with several other
+`ose-pod` containers.
 
 [//]: # (TODO: correct names, images and container IDs)
 
@@ -960,10 +688,9 @@ container as nothing more than a way for the host OS to get an interface created
 for the corresponding pod to be able to receive traffic. Deeper understanding of
 networking in AE is outside the scope of this material.
 
-To verify that the app is working, you can issue a curl to the app's port *on
-the node where the pod is running*
+To verify that the app is working, you can issue a curl to the app's port:
 
-    curl http://localhost:36061
+    curl http://localhost:6061
     Hello OpenShift!
 
 Hooray!
@@ -973,7 +700,8 @@ If you try to curl the pod IP and port, you get "connection refused". See if you
 can figure out why.
 
 ### Delete the Pod
-As `joe`, go ahead and delete this pod so that you don't get confused in later examples:
+Go ahead and delete this pod so that you don't get confused in later examples. Don't forget to
+do this as the ```joe``` user:
 
     oc delete pod hello-atomic
 
@@ -1005,6 +733,199 @@ Let's delete these pods quickly. As `joe` again:
 **Note:** You can delete most resources using "--all" but there is *no sanity
 check*. Be careful.
 
+## Adding Nodes
+We are getting ready to build out our complete environment and add more
+infrastructure. We will begin by adding our other two nodes.
+
+It is extremely easy to add nodes to an existing AE environment. Return
+to a `root` terminal on your master.
+
+### Modifying the Ansible Configuration
+On your master, edit the `/etc/ansible/hosts` file and uncomment the nodes, or
+add them as appropriate for your DNS/hostnames.
+
+Then, run the ansible playbook again:
+
+[//]: # (TODO: openshift-snsible -> ???)
+
+    ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
+
+Once the installer is finished, you can check the status of your environment
+(nodes) with `oc get nodes`. You'll see something like:
+
+    NAME                      LABELS        STATUS
+    ae-master.example.com   Schedulable   <none>    Ready
+    ae-node1.example.com    Schedulable   <none>    Ready
+    ae-node2.example.com    Schedulable   <none>    Ready
+
+## Regions and Zones
+Now that we have a larger AE environment, let's examine more complicated
+application and deployment paradigms. If you think you're about to learn how to
+configure regions and zones in AEP, you're only partially correct.
+
+In OpenShift 2, we introduced the specific concepts of "regions" and "zones" to
+enable organizations to provide some topologies for application resiliency. Apps
+would be spread throughout the zones in a region and, depending on the way you
+configured OpenShift, you could make different regions accessible to users.
+
+The reason that you're only "partially" correct in your assumption is that, for
+Atomic Enterprise and OpenShift v3, Kubernetes doesn't actually care about your
+topology. In other words, AE is "topology agnostic". In fact, AE provides
+advanced controls for implementing whatever topologies you can dream up,
+leveraging filtering and affinity rules to ensure that parts of applications
+(pods) are either grouped together or spread apart.
+
+For the purposes of a simple example, we'll be sticking with the "regions" and
+"zones" theme. But, as you go through these examples, think about what other
+complex topologies you could implement.
+
+First, we need to talk about the "scheduler" and its default configuration.
+
+### Scheduler and Defaults
+The "scheduler" is essentially the Atomic master. Any time a pod needs to be
+created (instantiated) somewhere, the master needs to figure out where to do
+this. This is called "scheduling". The default configuration for the scheduler
+looks like the following JSON (although this is embedded in the AE code and you
+won't find this in a file):
+
+    {
+      "predicates" : [
+        {"name" : "PodFitsResources"},
+        {"name" : "MatchNodeSelector"},
+        {"name" : "HostName"},
+        {"name" : "PodFitsPorts"},
+        {"name" : "NoDiskConflict"}
+      ],"priorities" : [
+        {"name" : "LeastRequestedPriority", "weight" : 1},
+        {"name" : "ServiceSpreadingPriority", "weight" : 1}
+      ]
+    }
+
+When the scheduler tries to make a decision about pod placement, first it goes
+through "predicates", which essentially filter out the possible nodes we can
+choose. Note that, depending on your predicate configuration, you might end up
+with no possible nodes to choose. This is totally OK (although generally not
+desired).
+
+These default options are documented in the link below, but the quick overview
+is:
+
+* Place pod on a node that has enough resources for it (duh)
+* Place pod on a node that doesn't have a port conflict (duh)
+* Place pod on a node that doesn't have a storage conflict (duh)
+
+And some more obscure ones:
+
+* Place pod on a node whose `NodeSelector` matches
+* Place pod on a node whose hostname matches the `Host` attribute value
+
+The next thing is, of the available nodes after the filters are applied, how do
+we select the "best" one. This is where "priorities" come in. Long story short,
+the various priority functions each get a score, multiplied by the weight, and
+the node with the highest score is selected to host the pod.
+
+Again, the defaults are:
+
+* Choose the node that is "least requested" (the least busy)
+* Spread services around - minimize the number of pods in the same service on
+    the same node
+
+And, for an extremely detailed explanation about what these various
+configuration flags are doing, check out:
+
+[//]: # (TODO: docs.openshift.org -> ???)
+
+    http://docs.openshift.org/latest/admin_guide/scheduler.html
+
+In a small environment, these defaults are pretty sane. Let's look at one of the
+important predicates (filters) before we move on to "regions" and "zones".
+
+### The NodeSelector
+`NodeSelector` is a part of the Pod data model. And, if we think back to our pod
+definition, there was a "label", which is just a key:value pair. In the case of
+a `NodeSelector`, our labels (key:value pairs) are used to help us try to find
+nodes that match, assuming that:
+
+* The scheduler is configured to MatchNodeSelector
+* The end user creating the pod knows which labels are out there
+
+But this use case is also pretty simplistic. It doesn't really allow for a
+topology, and there's not a lot of logic behind it. Also, if I specify a
+NodeSelector label when using MatchNodeSelector and there are no matching nodes,
+my workload will never get scheduled. Bummer.
+
+How can we make this more intelligent? We'll finally use "regions" and "zones".
+
+### Customizing the Scheduler Configuration
+[//]: # (TODO: /etc/openshift/master.yaml -> ???)
+
+The first step is to edit the Atomic master's configuration to tell it to
+look for a specific scheduler config file. As `root` edit
+`/etc/openshift/master.yaml` and find the line with `schedulerConfigFile`.
+Change it to:
+
+[//]: # (TODO: /etc/openshift/scheduler.json -> ???)
+
+    schedulerConfigFile: "/etc/openshift/scheduler.json"
+
+Then, create `/etc/openshift/scheduler.json` from the training materials:
+
+[//]: # (TODO: /etc/openshift/ -> ???)
+
+    /bin/cp -r ~/training/eap-beta3/scheduler.json /etc/openshift/
+
+It will have the following content:
+
+    {
+      "predicates" : [
+        {"name" : "PodFitsResources"},
+        {"name" : "PodFitsPorts"},
+        {"name" : "NoDiskConflict"},
+        {"name" : "Region", "argument" : {"serviceAffinity" : { "labels" : ["region"]}}}
+      ],"priorities" : [
+        {"name" : "LeastRequestedPriority", "weight" : 1},
+        {"name" : "ServiceSpreadingPriority", "weight" : 1},
+        {"name" : "Zone", "weight" : 2, "argument" : {"serviceAntiAffinity" : { "label" : "zone" }}}
+      ]
+    }
+
+To quickly review the above (this explanation sort of assumes that you read the
+scheduler documentation, but it's not critically important):
+
+* Filter out nodes that don't fit the resources, don't have the ports, or have
+    disk conflicts
+* If the pod specifies a label with the key "region", filter nodes by the value.
+
+So, if we have the following nodes and the following labels:
+
+* Node 1 -- "region":"primary"
+* Node 2 -- "region":"primary"
+* Node 3 -- "region":"infra"
+
+If we try to schedule a pod that has a `NodeSelector` of "region":"primary",
+then only Node 1 and Node 2 would be considered.
+
+OK, that takes care of the "region" part. What about the "zone" part?
+
+Our priorities tell us to:
+
+* Score the least-busy node higher
+* Score any nodes who don't already have a pod in this service higher
+* Score any nodes whose zone label's value **does not** match higher
+
+Why do we score a zone that **doesn't** match higher? Note that the definition
+for the Zone priority is a `serviceAntiAffinity` -- anti affinity. In this case,
+our anti affinity rule helps to ensure that we try to get nodes from *different*
+zones to take our pod.
+
+If we consider that our "primary" region might be a certain datacenter, and that
+each "zone" in that datacenter might be on its own power system with its own
+dedicated networking, this would ensure that, within the datacenter, pods of an
+application would be spread across power/network segments.
+
+The documentation link has some more complicated examples. The topoligical
+possibilities are endless!
+
 ### Restart the Master
 Go ahead and restart the master. This will make the new scheduler take effect.
 As `root` on your master:
@@ -1012,6 +933,82 @@ As `root` on your master:
 [//]: # (TODO: check the correct names of services)
 
     systemctl restart atomic-master
+
+### Label Your Nodes
+Just before configuring the scheduler, we added more nodes. If you perform the
+following as the `root` user:
+
+    oc get node -o json | sed -e '/"resourceVersion"/d' > ~/nodes.json
+
+You will have the JSON output of the definition of all of your nodes. Go ahead and
+edit this file. Add the following to the beginning of the `"metadata": {}`
+block for your "master" node inside the files `"items"` list:
+
+    "labels" : {
+      "region" : "infra",
+      "zone" : "NA"
+    },
+
+So the end result should look like (note, indentation is not significant in JSON):
+
+[//]: # (TODO: find out correct ipVersion)
+
+    {
+        "kind": "List",
+        "apiVersion": "v1beta3",
+        "items": [
+            {
+                "kind": "Node",
+                "apiVersion": "v1beta3",
+                "metadata": {
+                    "labels" : {
+                      "region" : "infra",
+                      "zone" : "NA"
+                    },
+                    "name": "ae-master.example.com",
+                    [...]
+
+
+For your node1, add the following:
+
+    "labels" : {
+      "region" : "primary",
+      "zone" : "east"
+    },
+
+For your node2, add the following:
+
+    "labels" : {
+      "region" : "primary",
+      "zone" : "west"
+    },
+
+Then, as `root` update your nodes using the following:
+
+    oc update node -f ~/nodes.json
+
+Note: At release the user should not need to edit JSON like this; the
+installer should be able to configure nodes initially with desired labels,
+and there should be better tools for changing them afterward.
+
+Note: If you end up getting an error while attempting to update the nodes, review your json. Ensure that there are commas in the previous element to your added label sections.
+
+Check the results to ensure the labels were applied:
+
+    oc get nodes
+
+    NAME                     LABELS                     STATUS
+    ae-master.example.com    region=infra,zone=NA       Ready
+    ae-node1.example.com     region=primary,zone=east   Ready
+    ae-node2.example.com     region=primary,zone=west   Ready
+
+Now there is one final step that is necessary due to a [caching
+bug](https://github.com/openshift/origin/issues/1727#issuecomment-94518311)
+which is not fixed for Early Access. Each node needs to be restarted with:
+
+[//]: # (TODO: check the service name)
+
+    systemctl restart atomic-node
 
 ## Services
 From the [Kubernetes
@@ -1036,22 +1033,12 @@ Now, let's look at a *service* definition:
 [//]: # (TODO: check the apiVersion)
 
     {
+      "id": "hello-atomic-service",
       "kind": "Service",
-      "apiVersion": "v1beta3",
-      "metadata": {
-        "name": "hello-atomic-service"
-      },
-      "spec": {
-        "selector": {
-          "name":"hello-atomic"
-        },
-        "ports": [
-          {
-            "protocol": "TCP",
-            "port": 80,
-            "targetPort": 9376
-          }
-        ]
+      "apiVersion": "v1beta1",
+      "port": 27017,
+      "selector": {
+        "name": "hello-atomic"
       }
     }
 
@@ -1088,19 +1075,13 @@ Here is an example route resource JSON definition:
 
     {
       "kind": "Route",
-      "apiVersion": "v1beta3",
+      "apiVersion": "v1beta1",
       "metadata": {
         "name": "hello-atomic-route"
       },
-      "spec": {
-        "host": "hello-atomic.cloudapps.example.com",
-        "to": {
-          "name": "hello-atomic-service"
-        },
-        "tls": {
-          "termination": "edge"
-        }
-      }
+      "id": "hello-atomic-route",
+      "host": "hello-atomic.cloudapps.example.com",
+      "serviceName": "hello-atomic-service"
     }
 
 When the `oc` command is used to create this route, a new instance of a route
@@ -1115,46 +1096,6 @@ This HAProxy pool ultimately contains all pods that are in a service. Which
 service? The service that corresponds to the `serviceName` directive that you
 see above.
 
-You'll notice that the definition above specifies TLS edge termination. This
-means that the router should provide this route via HTTPS. Because we provided
-no certificate info, the router will provide the default SSL certificate when
-the user connects. Because this is edge termination, user connections to the
-router will be SSL encrypted but the connection between the router and the pods
-is unencrypted.
-
-It is possible to utilize various TLS termination mechanisms, and more details
-is provided in the router documentation:
-
-[//]: # (TODO: docs.openshift.org -> ???)
-
-
-    http://docs.openshift.org/latest/architecture/core_objects/routing.html#securing-routes
-
-We'll see this edge termination in action shortly.
-
-### Creating a Wildcard Certificate
-In order to serve a valid certificate for
-secure access to applications in our cloud domain, we will need to create a key
-and wildcard certificate that the router will use by default for any routes that
-do not specify a key/cert of their own. AE supplies a command for
-creating a key/cert signed by the AE CA which we will use. On the
-master, as `root`:
-
-[//]: # (TODO: /etc/openshift -> ???)
-
-    CA=/etc/openshift/master
-    oadm create-server-cert --signer-cert=$CA/ca.crt \
-          --signer-key=$CA/ca.key --signer-serial=$CA/ca.serial.txt \
-          --hostnames='*.cloudapps.example.com' \
-          --cert=cloudapps.crt --key=cloudapps.key
-
-Now we need to combine `cloudapps.crt` and `cloudapps.key` with the CA into
-a single PEM format file that the router needs in the next step.
-
-    cat cloudapps.crt cloudapps.key $CA/ca.crt > cloudapps.router.pem
-
-Make sure you remember where you put this PEM file.
-
 ### Creating the Router
 The router is the ingress point for all traffic destined for AE
 services. It currently supports only HTTP(S) traffic (and "any"
@@ -1168,9 +1109,12 @@ interface unlike most containers that listen only on private IPs. The router
 proxies external requests for route names to the IPs of actual pods identified
 by the service associated with the route.
 
+
+[//]: # (TODO: AE -> Origin ???)
+
 AE's admin command set enables you to deploy router pods automatically.
-As the `root` user, try running it with no options and you will see that
-some options are needed to create the router:
+As the `root` user, try running it with no options and you should see the note
+that a router is needed:
 
     oadm router
     F0223 11:50:57.985423    2610 router.go:143] Router "router" does not exist
@@ -1189,22 +1133,11 @@ up our `.kubeconfig` for the root user, `oadm router` is asking us what
 credentials the *router* should use to communicate. We also need to specify the
 router image, since the tooling defaults to upstream/origin:
 
-[//]: # (TODO: /etc/openshift/master/openshift-router.kubeconfig)
-
-    osadm router --dry-run \
-    --credentials=/etc/openshift/master/openshift-router.kubeconfig
-
-Adding that would be enough to allow the command to proceed, but if we want
-this router to work for our environment, we also need to specify the beta
-router image (the tooling defaults to upstream/origin otherwise) and we need
-to supply the wildcard cert/key that we created for the cloud domain.
-
 [//]: # (TODO: /var/lib/openshift/openshift.local.certiciates/openshift-router)
 [//]: # (TODO: registry.access.redhat.com/openshift3_beta/ose-${component}:${version})
 
-    oadm router --default-cert=cloudapps.router.pem \
-    --credentials=/etc/openshift/master/openshift-router.kubeconfig \
-    --selector='region=infra' \
+    oadm router --create \
+    --credentials=/var/lib/openshift/openshift.local.certificates/openshift-router/.kubeconfig \
     --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 If this works, you'll see some output:
@@ -1212,31 +1145,19 @@ If this works, you'll see some output:
     services/router
     deploymentConfigs/router
 
-**Note:** You will have to reference the absolute path of the PEM file if you
-did not run this command in the folder where you created it.
+Let's check the pods with the following:
 
-Let's check the pods:
-
-    oc get pods
+    oc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
 
 In the output, you should see the router pod status change to "running" after a
 few moments (it may take up to a few minutes):
 
     POD                   CONTAINER(S)  HOST                                 STATUS
-    router-1-ats7z        router        ae-master.example.com/192.168.133.4   Running
+    deploy-router-1f99mb  deployment    ae-master.example.com/192.168.133.2  Succeeded
+    router-1-ats7z        router        ae-node2.example.com/192.168.133.4   Running
 
-Note: This output is huge, wide, and ugly. We're working on making it nicer. You
-can chime in here:
-
-    https://github.com/GoogleCloudPlatform/kubernetes/issues/7843
-
-In the above router creation command (`oadm router...`) we also specified
-`--selector`. This flag causes a `nodeSelector` to be placed on all of the pods
-created. If you think back to our "regions" and "zones" conversation, the
-AE environment is currently configured with an *infra*structure region
-called "infra". This `--selector` argument asks AE:
-
-*Please place all of these router pods in the infra region*.
+Note: You may or may not see the deploy pod, depending on when you run this
+command. Also the router may not end up on the master.
 
 ### Router Placement By Region
 In the very beginning of the documentation, we indicated that a wildcard DNS
@@ -1245,45 +1166,65 @@ request for an FQDN that it knows about, it will proxy the request to a pod for
 a service. But, for that FQDN request to actually reach the router, the FQDN has
 to resolve to whatever the host is where the router is running. Remember, the
 router is bound to ports 80 and 443 on the *host* interface. Since our wildcard
-DNS entry points to the public IP address of the master, the `--selector` flag
-used above ensures that the router is placed on our master as it's the only node
-with the label `region=infra`.
+DNS entry points to the public IP address of the master, we need to ensure that
+the router runs *on* the master.
+
+Remember how we set up regions and zones earlier? In our setup we labeled the
+master with the "infra" region. Without specifying a region or a zone in our
+environment, the router pod had an equal chance of ending up on any node, but we
+can ensure that it always and only lands in the "infra" region (thus, on the
+master) using a NodeSelector.
+
+To do this, we will modify the `deploymentConfig` for the router. If you recall,
+when we created the router we saw both a `deploymentConfig` and `service`
+resource.
+
+We have not discussed DeploymentConfigs (or even Deployments) yet. The brief
+summary is that a DeploymentConfig defines not only the pods (and containers)
+but also how many pods should be created and also transitioning from one pod
+definition to another.  We'll learn a little bit more about deployment
+configurations later.  For now, as `root`, we will use `oc edit` to manipulate
+the router DeploymentConfig and modify the router's pod definition to add a
+NodeSelector, so that router pods will be placed where we want them.  Whew!
+
+    oc edit deploymentConfigs/router
+
+`oc edit` will bring up the default system editor (vi) with a YAML
+representation of the resource, in this case the router's `deploymentConfig`.
+You could also edit it as JSON or use a different editor; see `oc edit --help`.
+
+Note: In future releases, you will be able to supply NodeSelector and other
+labels at creation time rather than editing the object after the fact.
+
+We will specify our NodeSelector within the `podTemplate:` block that
+defines the pods to create. It is easiest to just place it right after
+that line, like this: (indentation *is* significant in YAML)
+
+    [...]
+    template:
+      controllerTemplate:
+        podTemplate:
+          nodeSelector:
+            region: infra
+          desiredState:
+            manifest:
+    [...]
+
+Once you save this file and exit the editor, the DeploymentConfig will be
+updated in AE's data store and a new router deployment will be created
+based on the new definition.  It will take at least a few seconds for this to
+happen (possibly longer if the router image has not been pulled to the master
+yet).  Watch `oc get pods` until the router pod has been recreated and assigned
+to the master host.
 
 For a true HA implementation, one would want multiple "infra" nodes and
-multiple, clustered router instances. We will describe this later.
-
-### Viewing Router Stats
-Haproxy provides a stats page that's visible on port 1936 of your router host.
-Currently the stats page is password protected with a static password, this
-password will be generated using a template parameter in the future, for now the
-password is `cEVu2hUb` and the username is `admin`.
-
-To make this acessible publicly, you will need to open this port on your master:
-
-    iptables -I OS_FIREWALL_ALLOW -p tcp -m tcp --dport 1936 -j ACCEPT
-
-You will also want to add this rule to `/etc/sysconfig/iptables` as well to keep it
-across reboots. However, don't restart the iptables service, as this would destroy
-docker networking. Use the `iptables` command to change rules on a live system.
-
-Feel free to not open this port if you don't want to make this accessible, or if
-you only want it accessible via port fowarding, etc.
-
-**Note**: Unlike OpenShift v2 this router is not specific to a given project, as
-such it's really intended to be viewed by cluster admins rather than project
-admins.
-
-Ensure that port 1936 is accessible and visit:
-
-    http://admin:cEVu2hUb@ae-master.example.com:1936 
-
-to view your router stats.
+multiple, clustered router instances.
 
 ## The Complete Pod-Service-Route
 With a router now available, let's take a look at an entire
 Pod-Service-Route definition template and put all the pieces together.
 
-Don't forget -- the materials are in `~/training/eap-latest`.
+Don't forget -- the materials are in `~/training/eap-beta3`.
 
 ### Creating the Definition
 The following is a complete definition for a pod with a corresponding service
@@ -1294,110 +1235,118 @@ and a corresponding route. It also includes a deployment configuration.
 [//]: # (TODO: cnahge items[3]['template']["controllerTemplate"]["podTemplate"]["desiredState"]["manifest"]["containers"]["image"])
 
     {
-      "kind": "Config",
-      "apiVersion": "v1beta3",
-      "metadata": {
-        "name": "hello-service-complete-example"
+      "metadata":{
+        "name":"hello-service-pod-meta"
       },
-      "items": [
+      "kind":"Config",
+      "apiVersion":"v1beta1",
+      "creationTimestamp":"2014-09-18T18:28:38-04:00",
+      "items":[
         {
+          "id": "hello-atomic-service",
           "kind": "Service",
-          "apiVersion": "v1beta3",
-          "metadata": {
-            "name": "hello-atomic-service"
-          },
-          "spec": {
-            "selector": {
-              "name": "hello-atomic"
-            },
-            "ports": [
-              {
-                "protocol": "TCP",
-                "port": 27017,
-                "targetPort": 8080
-              }
-            ]
+          "apiVersion": "v1beta1",
+          "port": 27017,
+          "containerPort": 8080,
+          "selector": {
+            "name": "hello-atomic"
           }
         },
         {
           "kind": "Route",
-          "apiVersion": "v1beta3",
+          "apiVersion": "v1beta1",
           "metadata": {
             "name": "hello-atomic-route"
           },
-          "spec": {
-            "host": "hello-atomic.cloudapps.example.com",
-            "to": {
-              "name": "hello-atomic-service"
-            },
-            "tls": {
-              "termination": "edge"
-            }
+          "id": "hello-atomic-route",
+          "host": "hello-atomic.cloudapps.example.com",
+          "serviceName": "hello-atomic-service"
+        },
+        {
+          "apiVersion": "v1beta1",
+          "kind": "ImageStream",
+          "metadata": {
+            "name": "hello-atomic"
           }
         },
         {
-          "kind": "DeploymentConfig",
-          "apiVersion": "v1beta3",
-          "metadata": {
-            "name": "hello-atomic"
-          },
-          "spec": {
-            "strategy": {
-              "type": "Recreate",
-              "resources": {}
+            "kind": "DeploymentConfig",
+            "apiVersion": "v1beta1",
+            "metadata": {
+                "name": "hello-atomic"
             },
-            "replicas": 1,
-            "selector": {
-              "name": "hello-atomic"
-            },
-            "template": {
-              "metadata": {
-                "creationTimestamp": null,
-                "labels": {
-                  "name": "hello-atomic"
-                }
-              },
-              "spec": {
-                "containers": [
-                  {
-                    "name": "hello-atomic",
-                    "image": "openshift/hello-openshift:v0.4.3",
-                    "ports": [
-                      {
-                        "name": "hello-atomic-tcp-8080",
-                        "containerPort": 8080,
-                        "protocol": "TCP"
-                      }
+            "triggers": [
+                {
+                  "imageChangeParams": {
+                    "automatic": true,
+                    "containerNames": [
+                      "hello-atomic"
                     ],
-                    "resources": {},
-                    "terminationMessagePath": "/dev/termination-log",
-                    "imagePullPolicy": "PullIfNotPresent",
-                    "capabilities": {},
-                    "securityContext": {
-                      "capabilities": {},
-                      "privileged": false
+                    "from": {
+                      "name": "hello-openshift"
                     },
-                    "livenessProbe": {
-                      "tcpSocket": {
-                        "port": 8080
-                      },
-                      "timeoutSeconds": 1,
-                      "initialDelaySeconds": 10
-                    }
-                  }
-                ],
-                "restartPolicy": "Always",
-                "dnsPolicy": "ClusterFirst",
-                "serviceAccount": "",
-                "nodeSelector": {
-                  "region": "primary"
+                    "tag": "latest"
+                  },
+                  "type": "ImageChange"
+                },
+                {
+                  "type": "ConfigChange"
                 }
-              }
-            }
-          },
-          "status": {
+            ],
+            "template": {
+                "strategy": {
+                    "type": "Recreate"
+                },
+                "controllerTemplate": {
+                    "replicas": 1,
+                    "replicaSelector": {
+                        "name": "hello-atomic"
+                    },
+                    "podTemplate": {
+                        "desiredState": {
+                            "manifest": {
+                                "version": "v1beta2",
+                                "id": "",
+                                "volumes": null,
+                                "containers": [
+                                    {
+                                        "name": "hello-atomic",
+                                        "image": "openshift/hello-openshift:v0.4.3",
+                                        "ports": [
+                                            {
+                                                "containerPort": 8080,
+                                                "protocol": "TCP"
+                                            }
+                                        ],
+                                        "resources": {},
+                                        "livenessProbe": {
+                                            "tcpSocket": {
+                                                "port": 8080
+                                            },
+                                            "timeoutSeconds": 1,
+                                            "initialDelaySeconds": 10
+                                        },
+                                        "terminationMessagePath": "/dev/termination-log",
+                                        "imagePullPolicy": "PullIfNotPresent",
+                                        "capabilities": {}
+                                    }
+                                ],
+                                "restartPolicy": {
+                                    "always": {}
+                                },
+                                "dnsPolicy": "ClusterFirst"
+                            }
+                        },
+                        "nodeSelector": {
+                          "region": "primary"
+                        },
+                        "labels": {
+                            "name": "hello-atomic"
+                        }
+                    }
+                }
+            },
             "latestVersion": 1
-          }
         }
       ]
     }
@@ -1410,7 +1359,7 @@ In the JSON above:
   * with the selector `name=hello-atomic`
 * There is a route:
   * with the FQDN `hello-atomic.cloudapps.example.com`
-  * with the `spec` `to` `name=hello-atomic-service`
+  * with the `serviceName` directive `hello-atomic-service`
 
 If we work from the route down to the pod:
 
@@ -1422,10 +1371,9 @@ If we work from the route down to the pod:
 * There is a single pod with a single container that has the label
     `name=hello-atomic`
 
-If you are not using the `example.com` domain you will need to edit the route
-portion of `test-complete.json` to match your DNS environment.
-
-**Logged in as `joe`,** go ahead and use `osc` to create everything:
+**Logged in as `joe`,** edit `test-complete.json` and change the `host` stanza for
+the route to have the correct domain, matching the DNS configuration for your
+environment. Once this is done, go ahead and use `oc` to apply it:
 
     oc create -f test-complete.json
 
@@ -1435,7 +1383,8 @@ portion of `test-complete.json` to match your DNS environment.
 
     services/hello-atomic-service
     routes/hello-atomic-route
-    pods/hello-atomic
+    imageStreams/openshift/hello-atomic
+    deploymentConfigs/hello-atomic
 
 You can verify this with other `oc` commands:
 
@@ -1444,10 +1393,6 @@ You can verify this with other `oc` commands:
     oc get services
 
     oc get routes
-
-**Note:** May need to force resize:
-
-    https://github.com/openshift/origin/issues/2939
 
 ### Project Status
 AE provides a handy tool, `oc status`, to give you a summary of
@@ -1459,10 +1404,12 @@ common resources existing in the current project:
     In project Atomic Enterprise Demo (demo)
 
     service hello-atomic-service (172.30.17.237:27017 -> 8080)
+      hello-atomic deploys hello-openshift:latest
+        #1 deployed about a minute ago
 
     To see more information about a service or deployment config, use 'oc describe service <name>' or 'oc describe dc <name>'.
+    You can use 'oc get pods,svc,dc,bc,builds' to see lists of each of the types described above.
 
-You can use 'oc get all' to see lists of each of the types described above.
 `oc status` does not yet show bare pods or routes. The output will be
 more interesting when we get to builds and deployments.
 
@@ -1481,6 +1428,7 @@ access the service:
 
 [//]: # (TODO: fix the text "Hello OpenShift" after fixing the image)
 
+
     curl `oc get services | grep hello-atomic | awk '{print $4":"$5}' | sed -e 's/\/.*//'`
     Hello OpenShift!
 
@@ -1492,10 +1440,19 @@ Verifying the routing is a little complicated, but not terribly so. Since we
 specified that the router should land in the "infra" region, we know that its
 Docker container is on the master.
 
-We can use `osc exec` to get a bash interactive shell inside the running
-router container. The following command will do that for us:
+We ultimately want the PID of the container running the router so that we can go
+"inside" it. On the master system, as the `root` user, issue the following to
+get the PID of the router:
 
-    oc exec -it -p $(oc get pods | grep router | awk '{print $1}' | head -n 1) /bin/bash
+    docker inspect --format {{.State.Pid}}   \
+      `docker ps | grep haproxy-router | awk '{print $1}'`
+    2239
+
+The output will be a PID -- in this case, the PID is `2239`. We can use
+`nsenter` to jump inside that container:
+
+    nsenter -m -u -n -i -p -t 2239
+    [root@mainrouter /]#
 
 You are now in a bash session *inside* the container running the router.
 
@@ -1506,61 +1463,44 @@ Since we are using HAProxy as the router, we can cat the `routes.json` file:
 If you see some content that looks like:
 
     "demo/hello-atomic-service": {
-      "Name": "demo/hello-atomic-service",
-      "EndpointTable": {
-        "10.1.0.9:8080": {
-          "ID": "10.1.0.9:8080",
-          "IP": "10.1.0.9",
-          "Port": "8080"
-        }
-      },
-      "ServiceAliasConfigs": {
-        "demo-hello-atomic-route": {
-          "Host": "hello-atomic.cloudapps.example.com",
-          "Path": "",
-          "TLSTermination": "edge",
-          "Certificates": {
-            "hello-atomic.cloudapps.example.com": {
-              "ID": "demo-hello-atomic-route",
-              "Contents": "",
-              "PrivateKey": ""
-            }
-          },
-          "Status": "saved"
+        "Name": "demo/hello-atomic-service",
+        "EndpointTable": {
+          "10.1.2.2:8080": {
+            "ID": "10.1.2.2:8080",
+            "IP": "10.1.2.2",
+            "Port": "8080"
+          }
+        },
+        "ServiceAliasConfigs": {
+          "hello-atomic.cloudapps.example.com-": {
+            "Host": "hello-atomic.cloudapps.example.com",
+            "Path": "",
+            "TLSTermination": "",
+            "Certificates": null
+          }
         }
       }
-    }
 
 You know that "it" worked -- the router watcher detected the creation of the
 route in AE and added the corresponding configuration to HAProxy.
 
-Go ahead and `exit` from the container.
+Go ahead and `exit` from the container, and then curl your fancy,
+publicly-accessible Atomic application!
 
-    [root@router-1-2yefi /]# exit
-    exit
+[//]: # (TODO: fix the text)
 
-[//]: # (TODO: fix the text and cacert path)
 
-    curl --cacert /etc/openshift/master/ca.crt \
-             https://hello-atomic.cloudapps.example.com
+    [root@mainrouter /]# exit
+    logout
+    # curl http://hello-atomic.cloudapps.example.com
     Hello OpenShift!
 
-And:
+Hooray!
 
-    openssl s_client -connect hello-atomic.cloudapps.example.com:443 \
-                       -CAfile /etc/openshift/master/ca.crt
-    CONNECTED(00000003)
-    depth=1 CN = openshift-signer@1430768237
-    verify return:1
-    depth=0 CN = *.cloudapps.example.com
-    verify return:1
-    [...]
+If your machine is capable of resolving the wildcard DNS, you should also be
+able to view this in your web browser:
 
-Since we used AE's CA to create the wildcard SSL certificate, and since
-that CA is not "installed" in our system, we need to point our tools at that CA
-certificate in order to validate the SSL certificate presented to us by the
-router. With a CA or all certificates signed by a trusted authority, it would
-not be necessary to specify the CA everywhere.
+    http://hello-atomic.cloudapps.example.com
 
 ## Project Administration
 When we created the `demo` project, `joe` was made a project administrator. As
@@ -1574,17 +1514,14 @@ at his project, with his project administrator rights he can add her using the
 selected. If you recall earlier, when we logged in as `joe` we ended up in the
 `demo` project. We'll see how to switch projects later.
 
-Open a new terminal window as the `alice` user:
-
-    su - alice
+Open a new terminal window as the `alice` user and the login to AE:
 
 [//]: # (TODO: fix ca path)
 [//]: # (TODO: fix "Authentication required ... XXX" text)
 
-and login to OpenShift:
 
     oc login -u alice \
-    --certificate-authority=/etc/openshift/master/ca.crt \
+    --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
     --server=https://ae-master.example.com:8443
 
     Authentication required for https://ae-master.example.com:8443 (openshift)
@@ -1596,21 +1533,19 @@ and login to OpenShift:
 `alice` has no projects of her own yet (she is not an administrator of
 anything), so she is automatically configured to look at the `demo` project
 since she has access to it. She has "view" access, so `oc status` and `oc get
-pods` and so forth should show her the same thing as `joe`:
+pods` and so forth should show her the same thing as `joe`. However, she cannot
+make changes:
 
 [//]: # (TODO: fix image names)
 
-    [alice]$ osc get pods
-    POD            IP         CONTAINER(S)   IMAGE(S)                           HOST                                 LABELS              STATUS    CREATED      MESSAGE
-    hello-atomic   10.1.1.2   hello-atomic   openshift/hello-openshift:v0.4.3   ae-node1.example.com/192.168.133.3   name=hello-atomic   Running   14 minutes   
+    [alice]$ oc get pods
+    POD                       IP      CONTAINER(S)   IMAGE(S)
+    hello-atomic-1-zdgmt   10.1.2.4   hello-atomic   openshift/hello-openshift
+    [alice]$ oc delete pod hello-atomic-1-zdgmt
+    Error from server: "/api/v1beta1/pods/hello-atomic-1-zdgmt?namespace=demo" is forbidden because alice cannot delete on pods with name "hello-atomic-1-zdgmt" in demo
 
-However, she cannot make changes:
-
-    [alice]$ oc delete pod hello-atomic
-    Error from server: User "alice" cannot delete pods in project "demo"
-
-`joe` could also give `alice` the role of `edit`, which gives her access
-to do nearly anything in the project except adjust access.
+`joe` could also give `alice` the role of `edit`, which gives her access to all
+activities except for project administration.
 
     [joe]$ oadm policy add-role-to-user edit alice
 
@@ -1620,15 +1555,14 @@ another user or upgrade her own access. To allow that, `joe` could give
 
     [joe]$ oadm policy add-role-to-user admin alice
 
-There is no "owner" of a project, and projects can certainly be created
-without any administrator. `alice` or `joe` can remove the `admin`
-role (or all roles) from each other or themselves at any time without
-affecting the existing project.
+There is no "owner" of a project, and projects can be created without any
+administrator. `alice` or `joe` can remove the `admin` role (or all roles) from
+each other, or themselves, at any time without affecting the existing project.
 
     [joe]$ oadm policy remove-user joe
 
 Check `oadm policy help` for a list of available commands to modify
-project permissions. Atomic Enterprise RBAC is extremely flexible. The roles
+project permissions. OpenShift RBAC is extremely flexible. The roles
 mentioned here are simply defaults - they can be adjusted (per-project
 and per-resource if needed), more can be added, groups can be given
 access, etc. Check the documentation for more details:
@@ -1640,13 +1574,6 @@ access, etc. Check the documentation for more details:
 
 Of course, there be dragons. The basic roles should suffice for most uses.
 
-**Note:** There is a bug that actually prevents the remove-user from removing
-the user:
-
-https://github.com/openshift/origin/issues/2785
-
-It appears to be fixed but may not have made Early Access.
-
 ### Deleting a Project
 Since we are done with this "demo" project, and since the `alice` user is a
 project administrator, let's go ahead and delete the project. This should also
@@ -1656,6 +1583,10 @@ As the `alice` user:
 
     oc delete project demo
 
+If you quickly go to the web console and return to the top page, you'll see a
+warning icon that will pop-up a hover tip saying the project is marked for
+deletion.
+
 If you switch to the `root` user and issue `oc get project` you will see that
 the demo project's status is "Terminating". If you do an `oc get pod -n demo`
 you may see the pods, still. It takes about 60 seconds for the project deletion
@@ -1663,6 +1594,9 @@ cleanup routine to finish.
 
 Once the project disappears from `oc get project`, doing `oc get pod -n demo`
 should return no results.
+
+Note: As of the Early Access, a user with the `edit` role can actually delete the project.
+[This will be fixed](https://github.com/openshift/origin/issues/1885).
 
 
 ## The Registry
@@ -1673,24 +1607,6 @@ Atomic Enterprise provides a Docker registry that administrators may run inside
 the Atomic environment that will manage images "locally". Let's take a moment
 to set that up.
 
-### Storage for the registry
-The registry stores docker images and metadata. If you simply deploy a pod
-with the registry, it will use an ephemeral volume that is destroyed once the
-pod exits. Any images anyone has built or pushed into the registry would
-disappear. That would be bad.
-
-What we will do for this demo is use a directory on the master host for
-persistent storage. In production, this directory could be backed by an NFS
-mount supplied from the HA storage solution of your choice. That NFS mount
-could then be shared between multiple hosts for multiple replicas of the
-registry to make the registry HA.
-
-For now we will just show how to specify the directory and leave the NFS
-configuration as an exercise. On the master, as `root`, create the storage
-directory with:
-
-    mkdir -p /mnt/registry
-
 `oadm` again comes to our rescue with a handy installer for the
 registry. As the `root` user, run the following:
 
@@ -1698,9 +1614,8 @@ registry. As the `root` user, run the following:
 [//]: # (TODO: fix the image path)
 
     oadm registry --create \
-    --credentials=/etc/openshift/master/openshift-registry.kubeconfig \
-    --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}' \
-    --selector="region=infra" --mount-host=/mnt/registry
+    --credentials=/var/lib/openshift/openshift.local.certificates/openshift-registry/.kubeconfig \
+    --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
 You'll get output like:
 
@@ -1727,45 +1642,26 @@ as root:
 
     service router (172.30.17.129:80 -> 80)
       router deploys registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2
+        #2 deployed 8 minutes ago
         #1 deployed 7 minutes ago
 
 The project we have been working in when using the `root` user is called
 "default". This is a special project that always exists (you can delete it, but
 AE will re-create it) and that the administrative user uses by default.
 One interesting feature of `oc status` is that it lists recent deployments.
-When we created the router and registry, each created one deployment We will
-talk more about deployments when we get into builds.
+When we created the router and adjusted it, that adjustment resulted in a second
+deployment. We will talk more about deployments when we get into builds.
 
-Anyway, you will ultimately have a Docker registry that is being hosted by AE
-and that is running on the master (because we specified "region=infra" as the
-registry's node selector).
+Anyway, ultimately you will have a Docker registry that is being hosted by AE
+and that is running on one of your nodes.
 
 To quickly test your Docker registry, you can do the following:
 
     curl `oc get services | grep registry | awk '{print $4":"$5}' | sed -e 's/\/.*//'`
 
-And you should see [a 200
-response](https://docs.docker.com/registry/spec/api/#api-version-check) and a
-mostly empty body.  Your IP addresses will almost certainly be different.
+And you should see:
 
-~~~~
-* About to connect() to 172.30.17.114 port 5000 (#0)
-*   Trying 172.30.17.114...
-* Connected to 172.30.17.114 (172.30.17.114) port 5000 (#0)
-> GET /v2/ HTTP/1.1
-> User-Agent: curl/7.29.0
-> Host: 172.30.17.114:5000
-> Accept: */*
->
-< HTTP/1.1 200 OK
-< Content-Length: 2
-< Content-Type: application/json; charset=utf-8
-< Docker-Distribution-Api-Version: registry/2.0
-< Date: Tue, 26 May 2015 17:18:02 GMT
-<
-* Connection #0 to host 172.30.17.114 left intact
-{}    
-~~~~
+    "docker-registry server (dev) (v0.9.0)"
 
 If you get "connection reset by peer" you may have to wait a few more moments
 after the pod is running for the service proxy to update the endpoints necessary
@@ -1779,14 +1675,45 @@ And you will eventually see something like:
     Name:                   docker-registry
     Labels:                 docker-registry=default
     Selector:               docker-registry=default
-    Type:                   ClusterIP
-    IP:                     172.30.239.41
+    IP:                     172.30.17.64
     Port:                   <unnamed>       5000/TCP
-    Endpoints:              <unnamed>       10.1.0.4:5000
+    Endpoints:              10.1.0.5:5000
     Session Affinity:       None
     No events.
 
-Once there is an endpoint listed, the curl should work and the registry is available.
+Once there is an endpoint listed, the curl should work.
+
+### Registry Placement By Region (optional)
+In the beta environment, as architected, there is no real need for the registry
+to land on any particular node. However, for consistency, you might want to keep
+AE "infrastructure" components on the master's node. We can use our
+previously-defined "infra" region for this purpose.
+
+To do this, edit the created DeploymentConfig definition with `osc edit`:
+
+    oc edit dc docker-registry
+
+As before, specify your NodeSelector within the `podTemplate:` block that
+defines the pods to create. It is easiest to just place it right after
+that line, like this: (indentation *is* significant in YAML)
+
+    [...]
+    template:
+      controllerTemplate:
+        podTemplate:
+          nodeSelector:
+            region: infra
+          desiredState:
+            manifest:
+    [...]
+
+Once you save this file and exit, the DeploymentConfig will be updated and
+a new registry deployment will soon be created with the new definition.
+
+If you are going to move the registry, do it now or don't do it all. As
+dedicated storage volumes did not make the Early Access drop, restarting the
+registry pod will result in an empty registry -- all the images will be lost.
+This will be a Very.Bad.Thing.
 
 [//]: # (TODO: Missing template section)
 [//]: # (TODO: Are templates instantiable without UI?)
@@ -1820,10 +1747,9 @@ You will need to ensure the following, or fix the following:
 * Your hostnames for your machines match the entries in `/etc/hosts`
 * Your `cloudapps` domain points to the correct node ip in `dnsmasq.conf`
 * Each of your systems has the same `/etc/hosts` file
-* Your master and nodes `/etc/resolv.conf` points to the IP address of the node
+* The first `nameserver` in `/etc/resolv.conf` on the node running dnsmasq should be 127.0.0.1 and the second nameserver should be your corporate or upstream DNS resolver (eg: Google DNS @ 8.8.8.8); alternatively put upstream resolver as `server=8.8.8.8` in `/etc/dnsmasq.conf`
+* the other nodes' and master's `/etc/resolv.conf` points to the IP address of the node
   running DNSMasq as the first nameserver
-* The second nameserver in `/etc/resolv.conf` on the node running dnsmasq points
-  to your corporate or upstream DNS resolver (eg: Google DNS @ 8.8.8.8)
 * That you also open port 53 (UDP) to allow DNS queries to hit the node
 
 Following this setup for dnsmasq will ensure that your wildcard domain works,
@@ -1864,10 +1790,10 @@ something like the following on your connected machine:
 
 [//]: # (TODO: change image names?)
 
-    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router
-    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer
-    docker pull registry.access.redhat.com/openshift3_beta/ose-pod
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry
+    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.3.2
+    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2
     docker pull registry.access.redhat.com/openshift3_beta/ruby-20-rhel7
     docker pull registry.access.redhat.com/openshift3_beta/mysql-55-rhel7
     docker pull openshift/hello-openshift
@@ -1876,11 +1802,11 @@ This will fetch all of the images. You can then save them to a tarball:
 
 [//]: # (TODO: change image names?)
 
-    docker save -o beta4-images.tar \
-    registry.access.redhat.com/openshift3_beta/ose-haproxy-router \
-    registry.access.redhat.com/openshift3_beta/ose-deployer \
-    registry.access.redhat.com/openshift3_beta/ose-pod \
-    registry.access.redhat.com/openshift3_beta/ose-docker-registry \
+    docker save -o beta3-images.tar \
+    registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2 \
+    registry.access.redhat.com/openshift3_beta/ose-deployer:v0.4.3.2 \
+    registry.access.redhat.com/openshift3_beta/ose-pod:v0.4.3.2 \
+    registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2 \
     registry.access.redhat.com/openshift3_beta/ruby-20-rhel7 \
     registry.access.redhat.com/openshift3_beta/mysql-55-rhel7 \
     openshift/hello-openshift
@@ -1917,10 +1843,9 @@ to limit some of what it returns:
 
 # APPENDIX - Troubleshooting
 
-An experimental diagnostics command is in progress for Atomic Enterprise.
-Once merged it should be available as `origin ex diagnostics`. There may
-be out-of-band updated versions of diagnostics under
-[Luke Meyer's release page](https://github.com/sosiouxme/origin/releases).
+An experimental diagnostics command is in progress for Atomic Enterprise, to hopefully
+be included in the origin binary for the next release. For now, you can download
+the one for Early Access under [Luke Meyer's release page](https://github.com/sosiouxme/origin/releases).
 Running this may save you some time by pointing you in the right direction
 for common issues. This is very much still under development however.
 
@@ -1943,15 +1868,11 @@ Common problems
 [//]: # (TODO: ~/.config/openshift, ca paths)
 
 
-        # The login command creates a .kubeconfig file in the CWD.
-        # But we need it to exist in ~/.kube
-        cd ~/.kube
-
-        # If a stale token exists it will prevent the beta4 login command from working
-        rm .kubeconfig
+        # If a stale token exists it will prevent the login command from working
+        rm ~/.config/openshift/.config
 
         oc login \
-        --certificate-authority=/etc/openshift/master/ca.crt \
+        --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/cert.crt \
         --cluster=master --server=https://ae-master.example.com:8443 \
         --namespace=[INSERT NAMESPACE HERE]
 
@@ -1962,15 +1883,10 @@ Common problems
         https://ae-master.example.net:8443/api/v1beta1/pods?namespace=default:
         x509: certificate signed by unknown authority
 
-    Check the value of $KUBECONFIG:
-
-        echo $kubeconfig
-
-    If you don't see anything, you may have changed your `.bash_profile` but
-    have not yet sourced it. Make sure that you followed the step of adding
-    `$KUBECONFIG`'s export to your `.bash_profile` and then source it:
-
-        source ~/.bash_profile
+    This generally means you do not have a client config file at all, as it should
+    supply the certificate authority for validating the master. You could also
+    have the wrong CA in your client config. You should probably regenerate
+    your client config as in the previous suggestion.
 
 * When issuing a `curl` to my service, I see `curl: (56) Recv failure:
     Connection reset by peer`
@@ -1993,7 +1909,7 @@ Common problems
 Given the distributed nature of Atomic Enterprise you may find it beneficial to
 aggregate logs from your AE infastructure services. By default, AE
 services log to the systemd journal and rsyslog persists those log messages to
-`/var/log/messages`. We'll reconfigure rsyslog to write these entries to
+`/var/log/messages`. We''ll reconfigure rsyslog to write these entries to
 `/var/log/openshift` and configure the master host to accept log data from the
 other hosts.
 
@@ -2026,7 +1942,7 @@ Restart rsyslog
 
     systemctl restart rsyslog
 
-## Configure nodes to send atomic logs to your master
+## Configure nodes to send Atomic logs to your master
 On your other hosts send openshift logs to your master by adding this line to
 `/etc/rsyslog.conf`
 
@@ -2084,7 +2000,7 @@ HTTPS_PROXY=https://USERNAME:PASSWORD@10.0.0.1:8080/
 NO_PROXY=master.example.com
 ~~~
 
-It's important that the Master doesn't use the proxy to access itself so make
+It's important that the master doesn't use the proxy to access itself so make
 sure it's listed in the `NO_PROXY` value.
 
 Now restart the Service:
@@ -2097,8 +2013,8 @@ If you had previously imported ImageStreams without the proxy configuration to c
 [//]: # (TODO: openshift namespace ??)
 
 ~~~
-oc delete imagestreams -n openshift --all
-oc create -f image-streams.json -n openshift
+osc delete imagestreams -n openshift --all
+osc create -f image-streams.json -n openshift
 ~~~
 
 ## Setting Environment Variables in Pods
@@ -2110,7 +2026,8 @@ be done for configuring a `Pod`'s proxy at runtime:
 
 [//]: # (TODO: apiVersion)
 
-    {
+~~~
+   {
       "apiVersion": "v1beta1",
       "kind": "DeploymentConfig",
       "metadata": {
@@ -2128,7 +2045,8 @@ be done for configuring a `Pod`'s proxy at runtime:
                         "name": "HTTP_PROXY",
                         "value": "http://USER:PASSWORD@IPADDR:PORT"
                       },
-    ...
+...
+~~~
 
 ## Proxying Docker Pull
 
@@ -2136,9 +2054,11 @@ This is yet another case where it may be necessary to tunnel traffic through a
 proxy.  In this case you can edit `/etc/sysconfig/docker` and add the variables
 in shell format:
 
-    NO_PROXY=mycompany.com
-    HTTP_PROXY=http://USER:PASSWORD@IPADDR:PORT
-    HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
+~~~
+NO_PROXY=mycompany.com
+HTTP_PROXY=http://USER:PASSWORD@IPADDR:PORT
+HTTPS_PROXY=https://USER:PASSWORD@IPADDR:PORT
+~~~
 
 ## Future Considerations
 
@@ -2153,6 +2073,8 @@ Another is specifically for AWS, which can take your API credentials and
 configure the entire AWS environment, too.
 
 ## Generic Cloud Install
+
+### An Example Hosts File (/etc/ansible/hosts)
 
 [//]: # (TODO: is OSEv3 some key that needs to be changed?)
 
@@ -2175,14 +2097,14 @@ configure the entire AWS environment, too.
     
     # host group for nodes
     [nodes]
-    ec2-52-6-179-239.compute-1.amazonaws.com openshift_node_labels="{'region': 'infra', 'zone': 'default'}" #The master
-    ec2-52-4-251-128.compute-1.amazonaws.com openshift_node_labels="{'region': 'primary', 'zone': 'default'}"
+    ec2-52-6-179-239.compute-1.amazonaws.com #The master
     ... <additional node hosts go here> ...
 
-**Testing the Auto-detected Values:**
-Run the openshift_facts playbook:
+### Testing the Auto-detected Values
 
-[//]: # (TODO: fix the repo path)
+[//]: # (TODO: make a new atomic-enterprise repo and move ansible configs there)
+
+Run the openshift_facts playbook:
 
     cd ~/openshift-ansible
     ansible-playbook playbooks/byo/openshift_facts.yml
@@ -2234,22 +2156,27 @@ Next, we'll need to override the detected defaults if they are not what we expec
   * Should be the externally accessible ip associated with the instance
   * openshift_public_ip will override
 
-To override the the defaults, you can set the variables in your inventory. For example, if using AWS and managing dns externally, you can override the host public hostname as follows:
+To override the the defaults, you can set the variables in your inventory. For
+example, if using AWS and managing dns externally, you can override the host
+public hostname as follows:
 
     [masters]
     ec2-52-6-179-239.compute-1.amazonaws.com openshift_public_hostname=ae-master.public.example.com
 
-**Running ansible:**
+Running ansible:
 
-    ansible ~/openshift-ansible/playbooks/byo/config.yml
+    ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
 
 ## Automated AWS Install With Ansible
 
-**Requirements:**
+### Requirements:
 - ansible-1.8.x
 - python-boto
 
-**Assumptions Made:**
+### Assumptions Made:
+
+[//]: # (TODO: openshift security groups??)
+
 - The user's ec2 credentials have the following permissions:
   - Create instances
   - Create EBS volumes
@@ -2262,7 +2189,7 @@ To override the the defaults, you can set the variables in your inventory. For e
   - When using a vpc, the default subnets are expected to be configured for auto-assigning a public ip as well.
 - If providing a different ami id using the EC2_AMI_ID, it is a cloud-init enabled RHEL-7 image.
 
-**Setup (Modifying the Values Appropriately):**
+### Setup (Modifying the Values Appropriately):
 
     export AWS_ACCESS_KEY_ID=MY_ACCESS_KEY
     export AWS_SECRET_ACCESS_KEY=MY_SECRET_ACCESS_KEY
@@ -2274,14 +2201,13 @@ To override the the defaults, you can set the variables in your inventory. For e
     export ROUTE_53_WILDCARD_ZONE=cloudapps.example.com
     export ROUTE_53_HOST_ZONE=example.com
 
-**Clone the openshift-ansible repo and configure helpful symlinks:**
-    ansible-playbook clone_and_setup_repo.yml
-
-**Configuring the Hosts:**
+### Configuring the Hosts:
 
     ansible-playbook -i inventory/aws/hosts openshift_setup.yml
 
-**Accessing the Hosts:**
+### Accessing the Hosts:
+[//]: # (TODO: change openshift user)
+
 Each host will be created with an 'openshift' user that has passwordless sudo configured.
 
 # APPENDIX - Linux, Mac, and Windows clients

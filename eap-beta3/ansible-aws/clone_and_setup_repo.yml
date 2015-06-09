@@ -8,7 +8,7 @@
   vars:
     checkout_dir: /tmp/openshift-training/openshift-ansible/
     git_repo: https://github.com/detiber/openshift-ansible.git
-    repo_branch: v3-beta4
+    repo_branch: v3-beta3
   tasks:
   - git:
       dest: "{{ checkout_dir }}"

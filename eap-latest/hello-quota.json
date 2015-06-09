@@ -7,92 +7,172 @@
   "creationTimestamp":"2014-09-18T18:28:38-04:00",
   "items":[
     {
-      "id": "1-hello-atomic",
       "kind": "Pod",
-      "apiVersion":"v1beta2",
-      "labels": {
-        "name": "1-hello-atomic"
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "hello-atomic-1",
+        "creationTimestamp": null,
+        "labels": {
+          "name": "hello-atomic-1"
+        }
       },
-      "desiredState": {
-        "manifest": {
-          "version": "v1beta1",
-          "id": "hello-atomic",
-          "containers": [{
+      "spec": {
+        "containers": [
+          {
             "name": "hello-atomic",
             "image": "openshift/hello-openshift:v0.4.3",
-            "ports": [{
-              "hostPort": 6061,
-              "containerPort": 8080
-            }]
-          }]
-        }
-      }
+            "ports": [
+              {
+                "containerPort": 8080,
+                "protocol": "TCP"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "10m",
+                "memory": "16Mi"
+              }
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "imagePullPolicy": "IfNotPresent",
+            "capabilities": {},
+            "securityContext": {
+              "capabilities": {},
+              "privileged": false
+            }
+          }
+        ],
+        "restartPolicy": "Always",
+        "dnsPolicy": "ClusterFirst",
+        "serviceAccount": ""
+      },
+      "status": {}
     },
     {
-      "id": "2-hello-atomic",
       "kind": "Pod",
-      "apiVersion":"v1beta2",
-      "labels": {
-        "name": "2-hello-atomic"
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "hello-atomic-2",
+        "creationTimestamp": null,
+        "labels": {
+          "name": "hello-atomic-2"
+        }
       },
-      "desiredState": {
-        "manifest": {
-          "version": "v1beta1",
-          "id": "hello-atomic",
-          "containers": [{
+      "spec": {
+        "containers": [
+          {
             "name": "hello-atomic",
             "image": "openshift/hello-openshift:v0.4.3",
-            "ports": [{
-              "hostPort": 6061,
-              "containerPort": 8080
-            }]
-          }]
-        }
-      }
+            "ports": [
+              {
+                "containerPort": 8080,
+                "protocol": "TCP"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "10m",
+                "memory": "16Mi"
+              }
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "imagePullPolicy": "IfNotPresent",
+            "capabilities": {},
+            "securityContext": {
+              "capabilities": {},
+              "privileged": false
+            }
+          }
+        ],
+        "restartPolicy": "Always",
+        "dnsPolicy": "ClusterFirst",
+        "serviceAccount": ""
+      },
+      "status": {}
     },
     {
-      "id": "3-hello-atomic",
       "kind": "Pod",
-      "apiVersion":"v1beta2",
-      "labels": {
-        "name": "3-hello-atomic"
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "hello-atomic-3",
+        "creationTimestamp": null,
+        "labels": {
+          "name": "hello-atomic-3"
+        }
       },
-      "desiredState": {
-        "manifest": {
-          "version": "v1beta1",
-          "id": "hello-atomic",
-          "containers": [{
+      "spec": {
+        "containers": [
+          {
             "name": "hello-atomic",
             "image": "openshift/hello-openshift:v0.4.3",
-            "ports": [{
-              "hostPort": 6061,
-              "containerPort": 8080
-            }]
-          }]
-        }
-      }
+            "ports": [
+              {
+                "containerPort": 8080,
+                "protocol": "TCP"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "10m",
+                "memory": "16Mi"
+              }
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "imagePullPolicy": "IfNotPresent",
+            "capabilities": {},
+            "securityContext": {
+              "capabilities": {},
+              "privileged": false
+            }
+          }
+        ],
+        "restartPolicy": "Always",
+        "dnsPolicy": "ClusterFirst",
+        "serviceAccount": ""
+      },
+      "status": {}
     },
     {
-      "id": "4-hello-atomic",
       "kind": "Pod",
-      "apiVersion":"v1beta2",
-      "labels": {
-        "name": "4-hello-atomic"
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "hello-atomic-4",
+        "creationTimestamp": null,
+        "labels": {
+          "name": "hello-atomic-4"
+        }
       },
-      "desiredState": {
-        "manifest": {
-          "version": "v1beta1",
-          "id": "hello-atomic",
-          "containers": [{
+      "spec": {
+        "containers": [
+          {
             "name": "hello-atomic",
             "image": "openshift/hello-openshift:v0.4.3",
-            "ports": [{
-              "hostPort": 6061,
-              "containerPort": 8080
-            }]
-          }]
-        }
-      }
+            "ports": [
+              {
+                "containerPort": 8080,
+                "protocol": "TCP"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "10m",
+                "memory": "16Mi"
+              }
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "imagePullPolicy": "IfNotPresent",
+            "capabilities": {},
+            "securityContext": {
+              "capabilities": {},
+              "privileged": false
+            }
+          }
+        ],
+        "restartPolicy": "Always",
+        "dnsPolicy": "ClusterFirst",
+        "serviceAccount": ""
+      },
+      "status": {}
     }
   ]
 }

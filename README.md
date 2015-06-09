@@ -10,7 +10,9 @@ and what that release covers.
 
 **Work in proggress**
 
-## Early Access Program
+[//]: # (TODO: Update this once README.md ss updated in openshift-training repo)
+
+## Early Access Program based on OSO beta4
 The following is an overview of the Atomic Enterprise (AE) features covered in
 Early Access Program training:
 - Installation and configuration of AE and atomic-sdn
@@ -34,5 +36,30 @@ Early Access Program training:
 [//]: # (- Rollback / Activate)
 [//]: # (- Templates/Quickstarts from the console)
 
-[The specific documentation for Early Access is here.](eap-latest-setup.md)
+[The specific documentation is here.](eap-latest-setup.md)
 
+## Early Access Program based on OSO beta3
+The following is an overview of the Atomic Enterprise (AE) features covered in
+Early Access Program training:
+- Installation and configuration of AE and atomic-sdn
+- Adding nodes to the master
+- Extensive command line use
+- Basic HTTP/S (only) routing. 
+- Work with supplied example applications
+- User authentication
+- Project quotas (display)
+- Complex / Tiered app deployment
+- Arbitrary docker image deployment
+- "integration" / webhooks
+- Ansible-based installer (non-interactive)
+- Improvements and enhancements in the CLI
+- "Regions" and "Zones"
+- Quota enforcement
+- Beginnings of user/team management
+- Internal service DNS
+- Expanded documentation/explanations
+[//]: # (- Web console and project basics)
+[//]: # (- Rollback / Activate)
+[//]: # (- Templates/Quickstarts from the console)
+
+[The specific documentation is here.](eap-beta3-setup.md)
