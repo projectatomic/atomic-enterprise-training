@@ -2,7 +2,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [Atomic Enterprise Platform Early Access Program](#atomi-enterprise-platform-early-access-program)
+- [Atomic Enterprise Platform Early Access Program](#atomic-enterprise-platform-early-access-program)
   - [Architecture and Requirements](#architecture-and-requirements)
     - [Architecture](#architecture)
     - [Requirements](#requirements)
@@ -44,12 +44,7 @@
     - [Extra Credit](#extra-credit)
     - [Delete the Pod](#delete-the-pod)
     - [Quota Enforcement](#quota-enforcement)
-  - [Regions and Zones](#regions-and-zones)
-    - [Scheduler and Defaults](#scheduler-and-defaults)
-    - [The NodeSelector](#the-nodeselector)
-    - [Customizing the Scheduler Configuration](#customizing-the-scheduler-configuration)
     - [Restart the Master](#restart-the-master)
-    - [Label Your Nodes](#label-your-nodes)
   - [Services](#services)
   - [Routing](#routing)
     - [Creating a Wildcard Certificate](#creating-a-wildcard-certificate)
@@ -64,7 +59,7 @@
   - [Project Administration](#project-administration)
     - [Deleting a Project](#deleting-a-project)
   - [The Registry](#the-registry)
-    - [Registry Placement By Region (optional)](#registry-placement-by-region-optional)
+    - [Storage for the registry](#storage-for-the-registry)
   - [Conclusion](#conclusion)
 - [APPENDIX - DNSMasq setup](#appendix---dnsmasq-setup)
     - [Verifying DNSMasq](#verifying-dnsmasq)
@@ -75,7 +70,7 @@
 - [APPENDIX - Infrastructure Log Aggregation](#appendix---infrastructure-log-aggregation)
   - [Enable Remote Logging on Master](#enable-remote-logging-on-master)
   - [Enable logging to /var/log/openshift](#enable-logging-to-varlogopenshift)
-  - [Configure nodes to send Atomic logs to your master](#configure-nodes-to-send-atomic-logs-to-your-master)
+  - [Configure nodes to send atomic logs to your master](#configure-nodes-to-send-atomic-logs-to-your-master)
   - [Optionally Log Each Node to a unique directory](#optionally-log-each-node-to-a-unique-directory)
 - [APPENDIX - Working with HTTP Proxies](#appendix---working-with-http-proxies)
   - [Importing ImageStreams](#importing-imagestreams)
@@ -91,7 +86,7 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# Atomic Enterprise Platform Early Access
+# Atomic Enterprise Platform Early Access Program
 ## Architecture and Requirements
 ### Architecture
 The documented architecture for the early access testing is pretty simple. There are
@@ -695,7 +690,7 @@ using some sample code.  But, first, some housekeeping.
 Also, don't forget, the materials for these labs are in your
 `~/training/eap-latest` folder.
 
-### "Resources"
+### Resources
 There are a number of different resource types in AE, and, essentially,
 going through the motions of creating/destroying apps, scaling, building and
 etc. all ends up manipulating AE and Kubernetes resources under the

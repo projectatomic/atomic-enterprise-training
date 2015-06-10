@@ -2,7 +2,7 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [Atomic Enterprise Platform Early Access Program](#atomi-enterprise-platform-early-access-program)
+- [Atomic Enterprise Platform Early Access Program](#atomic-enterprise-platform-early-access-program)
   - [Architecture and Requirements](#architecture-and-requirements)
     - [Architecture](#architecture)
     - [Requirements](#requirements)
