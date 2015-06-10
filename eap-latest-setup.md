@@ -15,6 +15,7 @@
     - [Docker Storage Setup (optional, recommended)](#docker-storage-setup-optional-recommended)
     - [Grab Docker Images (Optional, Recommended)](#grab-docker-images-optional-recommended)
     - [Clone the Training Repository](#clone-the-training-repository)
+    - [Add Development Users](#add-development-users)
   - [Ansible-based Installer](#ansible-based-installer)
     - [Install Ansible](#install-ansible)
     - [Generate SSH Keys](#generate-ssh-keys)
@@ -23,14 +24,19 @@
     - [Configure Ansible](#configure-ansible)
     - [Modify Hosts](#modify-hosts)
     - [Run the Ansible Installer](#run-the-ansible-installer)
-    - [Add Development Users](#add-development-users)
+  - [Regions and Zones](#regions-and-zones)
+    - [Scheduler and Defaults](#scheduler-and-defaults)
+    - [The NodeSelector](#the-nodeselector)
+    - [Customizing the Scheduler Configuration](#customizing-the-scheduler-configuration)
+    - [Node Labels](#node-labels)
   - [Useful Logs](#useful-logs)
   - [Auth and Projects](#auth-and-projects)
     - [Configuring htpasswd Authentication](#configuring-htpasswd-authentication)
     - [A Project for Everything](#a-project-for-everything)
   - [Your First Application](#your-first-application)
-    - ["Resources"](#resources)
+    - [Resources](#resources)
     - [Applying Quota to Projects](#applying-quota-to-projects)
+    - [Applying Limit Ranges to Projects](#applying-limit-ranges-to-projects)
     - [Login](#login)
     - [Grab the Training Repo Again](#grab-the-training-repo-again)
     - [The Hello World Definition JSON](#the-hello-world-definition-json)
@@ -38,8 +44,6 @@
     - [Extra Credit](#extra-credit)
     - [Delete the Pod](#delete-the-pod)
     - [Quota Enforcement](#quota-enforcement)
-  - [Adding Nodes](#adding-nodes)
-    - [Modifying the Ansible Configuration](#modifying-the-ansible-configuration)
   - [Regions and Zones](#regions-and-zones)
     - [Scheduler and Defaults](#scheduler-and-defaults)
     - [The NodeSelector](#the-nodeselector)
@@ -357,8 +361,7 @@ Disable EPEL so that it is not accidentally used later:
 
     sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo
 
-There's currently a bug in the latest Ansible version, so we need to use a
-slightly older one. Install the packages for Ansible:
+Install the packages for Ansible:
 
     yum -y --enablerepo=epel install ansible
 
@@ -2294,12 +2297,9 @@ of the `oc` command.
 
 [//]: # (TODO: make this relevant to Atomic Enterprise)
 
-Visit [Download Red Hat OpenShift Enterprise Beta](https://access.redhat.com/downloads/content/289/ver=/rhel---7/0.4.3.2/x86_64/product-downloads)
-to download the Beta3 clients. You will need to sign into Customer Portal using
++Visit [Download Red Hat OpenShift Enterprise Beta](https://access.redhat.com/downloads/content/289/ver=/rhel---7/0.5.2.2/x86_64/product-downloads)
++to download the Beta4 clients. You will need to sign into Customer Portal using
 an account that includes the OpenShift Enterprise High Touch Beta entitlements.
-
-**Note**: Certain versions of Internet Explorer will save the Windows
-client without the .exe extension. Please rename the file to `oc.exe`.
 
 ## Log In To Your Atomic Environment
 
@@ -2327,5 +2327,3 @@ On Mac OSX and Linux you will need to make the file executable
 
    chmod +x oc
 
-In the future users will be able to download clients directly from the Atomic Enterprise
-console rather than needing to visit Customer Portal.
