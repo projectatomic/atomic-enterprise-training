@@ -408,9 +408,8 @@ If you looked at the Ansible hosts file, note that our master
 (ae-master.example.com) was present in both the `master` and the `node`
 section.
 
-Effectively, Ansible is going to install and configure both the master and node
-software on `ae-master.example.com`. Later, we will modify the Ansible
-configuration to add the extra nodes.
+Effectively, Ansible is going to install and configure node software on all the
+nodes and master software just on `ae-master.example.com` .
 
 There was also some information about "regions" and "zones" in the hosts file.
 Let's talk about those concepts now.
@@ -815,7 +814,7 @@ Then, execute:
 Atomic Enterprise, by default, is using a self-signed SSL certificate, so we must point
 our tool at the CA file.
 
-The `login` process created a file called `.config` in the `~/.config/openshift`
+The `login` process created a file called `config` in the `~/.config/openshift`
 folder. Take a look at it, and you'll see something like the following:
 
 [//]: # (TODO: /var/lib/openshift/openshift.local.certificates -> ???)
@@ -836,7 +835,7 @@ folder. Take a look at it, and you'll see something like the following:
     kind: Config
     preferences: {}
     users:
-    - name: joe/ose3-master-example-com:8443
+    - name: joe/ae-master-example-com:8443
       user:
         token: ZmQwMjBiZjUtYWE3OC00OWE1LWJmZTYtM2M2OTY2OWM0ZGIw
 
@@ -931,8 +930,9 @@ Issue a `get pods` to see the details of how it was defined:
 [//]: # (TODO: get the right name of hello-openshift image)
 
     oc get pods
-    POD           IP         CONTAINER(S)  IMAGE(S)                           HOST                                  LABELS              STATUS    CREATED
-    hello-atomic  10.1.0.6   hello-atomic  openshift/hello-openshift:v0.4.3   ae-master.example.com/192.168.133.2   name=hello-atomic   Running   10 seconds
+    POD            IP        CONTAINER(S)   IMAGE(S)                           HOST                      LABELS              STATUS    CREATED     MESSAGE
+    hello-atomic                                                               os-node1.miminar.local/   name=hello-atomic   Pending   8 seconds   
+                             hello-atomic   openshift/hello-openshift:v0.4.3
 
 The output of this command shows all of the Docker containers in a pod, which
 explains some of the spacing.
@@ -947,8 +947,8 @@ bound to 8080 on the container, along with several other `ose-pod` containers.
 [//]: # (TODO: correct names, images and container IDs)
 
     CONTAINER ID        IMAGE                              COMMAND              CREATED             STATUS              PORTS                    NAMES
-    ded86f750698        openshift/hello-openshift:v0.4.3   "/hello-openshift"   7 minutes ago       Up 7 minutes                                 k8s_hello-openshift.9ac8152d_hello-openshift_demo_18d03b48-0089-11e5-98b9-525400616fe9_c43c7d54
-    405d63115a60        openshift3_beta/ose-pod:v0.4.3.2   "/pod"               7 minutes ago       Up 7 minutes        0.0.0.0:6061->8080/tcp   k8s_POD.a01602bc_hello-openshift_demo_18d03b48-0089-11e5-98b9-525400616fe9_dffebcf1     
+    ded86f750698        openshift/hello-openshift:v0.4.3   "/hello-openshift"   7 minutes ago       Up 7 minutes                                 k8s_hello-atomic.b69b23ff_hello-atomic_demo_522adf06-0f83-11e5-982b-525400a4dc47_f491f4be
+    405d63115a60        openshift3_beta/ose-pod:v0.5.2.2   "/pod"               7 minutes ago       Up 7 minutes        0.0.0.0:6061->8080/tcp   k8s_POD.ad86e772_hello-atomic_demo_522adf06-0f83-11e5-982b-525400a4dc47_6cc974dc
 
 [//]: # (TODO: openshift3_beta/ -> ???)
 
