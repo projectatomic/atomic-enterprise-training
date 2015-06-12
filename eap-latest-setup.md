@@ -397,6 +397,11 @@ Copy the staged Ansible configuration files to `/etc/ansible`:
 If you are not using the "example.com" domain and the training example
 hostnames, modify `/etc/ansible/hosts` accordingly.
 
+Also, if you are using multiple NICs and will be trying to direct various
+traffic to different places, you will need to take a look at [Generic Cloud
+Install](#generic-cloud-install) to learn more about the syntax of Ansible's
+`hosts` file.
+
 ### Run the Ansible Installer
 Now we can simply run the Ansible installer:
 
@@ -785,6 +790,7 @@ As `root` in the `training/eap-latest` folder:
     oc create -f limits.json --namespace=demo
 
 Review your limit ranges
+
     oc describe limitranges limits -n demo
     Name:           limits
     Type            Resource        Min     Max     Default
@@ -1130,12 +1136,13 @@ is provided in the router documentation:
 We'll see this edge termination in action shortly.
 
 ### Creating a Wildcard Certificate
-In order to serve a valid certificate for
-secure access to applications in our cloud domain, we will need to create a key
-and wildcard certificate that the router will use by default for any routes that
-do not specify a key/cert of their own. AE supplies a command for
-creating a key/cert signed by the AE CA which we will use. On the
-master, as `root`:
+In order to serve a valid certificate for secure access to applications in our
+cloud domain, we will need to create a key and wildcard certificate that the
+router will use by default for any routes that do not specify a key/cert of their
+own. Atomic supplies a command for creating a key/cert signed by the AE's
+CA which we will use.
+
+On the master, as `root`:
 
 [//]: # (TODO: /etc/openshift -> ???)
 
@@ -2282,8 +2289,8 @@ of the `oc` command.
 
 [//]: # (TODO: make this relevant to Atomic Enterprise)
 
-+Visit [Download Red Hat OpenShift Enterprise Beta](https://access.redhat.com/downloads/content/289/ver=/rhel---7/0.5.2.2/x86_64/product-downloads)
-+to download the Beta4 clients. You will need to sign into Customer Portal using
+Visit [Download Red Hat OpenShift Enterprise Beta](https://access.redhat.com/downloads/content/289/ver=/rhel---7/0.5.2.2/x86_64/product-downloads)
+to download the Beta4 clients. You will need to sign into Customer Portal using
 an account that includes the OpenShift Enterprise High Touch Beta entitlements.
 
 ## Log In To Your Atomic Environment

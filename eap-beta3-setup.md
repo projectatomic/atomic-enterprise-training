@@ -80,7 +80,7 @@
     - [An Example Hosts File (/etc/ansible/hosts)](#an-example-hosts-file-etcansiblehosts)
     - [Testing the Auto-detected Values](#testing-the-auto-detected-values)
   - [Automated AWS Install With Ansible](#automated-aws-install-with-ansible)
-    - [Requirements:](#requirements)
+    - [Requirements:](#requirements-1)
     - [Assumptions Made:](#assumptions-made)
     - [Setup (Modifying the Values Appropriately):](#setup-modifying-the-values-appropriately)
     - [Configuring the Hosts:](#configuring-the-hosts)

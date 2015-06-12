@@ -24,7 +24,6 @@ Early Access Program training:
 - Project quotas (display)
 - Complex / Tiered app deployment
 - Arbitrary docker image deployment
-- "integration" / webhooks
 - Ansible-based installer (non-interactive)
 - Improvements and enhancements in the CLI
 - "Regions" and "Zones"
@@ -35,8 +34,13 @@ Early Access Program training:
 [//]: # (- Web console and project basics)
 [//]: # (- Rollback / Activate)
 [//]: # (- Templates/Quickstarts from the console)
+[//]: # (- "integration" / webhooks)
 
 [The specific documentation is here.](eap-latest-setup.md)
+
+# Old Information
+The following info is provided for historical purposes only. It is no longer
+relevant, and may not even work
 
 ## Early Access Program based on OSO beta3
 The following is an overview of the Atomic Enterprise (AE) features covered in
