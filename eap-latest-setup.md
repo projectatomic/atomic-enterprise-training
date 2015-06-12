@@ -325,9 +325,9 @@ Almost all of the files for this training are in the training folder you just
 cloned.
 
 ### Add Development Users
-In the "real world" your developers would likely be using the OpenShift tools on
-their own machines (`osc` and the web console). For the Early Access training, we
-will create user accounts for two non-privileged users of OpenShift, *joe* and
+In the "real world" your developers would likely be using the AE tools on
+their own machines (e.g. `oc`). For the Early Access training, we
+will create user accounts for two non-privileged users of AE, *joe* and
 *alice*, on the master. This is done for convenience and because we'll be using
 `htpasswd` for authentication.
 
@@ -805,7 +805,7 @@ Open a terminal as `joe`:
 
 Then, execute:
 
-[//]: # (TODO: /var/lib/openshift/openshift.local.certificates -> ???)
+[//]: # (TODO: /etc/openshift/master/ca.crt)
 
     oc login -u joe \
     --certificate-authority=/etc/openshift/master/ca.crt \
@@ -1125,7 +1125,6 @@ is provided in the router documentation:
 
 [//]: # (TODO: docs.openshift.org -> ???)
 
-
     http://docs.openshift.org/latest/architecture/core_objects/routing.html#securing-routes
 
 We'll see this edge termination in action shortly.
@@ -1167,19 +1166,10 @@ proxies external requests for route names to the IPs of actual pods identified
 by the service associated with the route.
 
 AE's admin command set enables you to deploy router pods automatically.
-As the `root` user, try running it with no options and you will see that
-some options are needed to create the router:
-
-    oadm router
-    F0223 11:50:57.985423    2610 router.go:143] Router "router" does not exist
-    (no service). Pass --create to install.
-
-So, go ahead and do what it says:
+Let's try to create one:
 
     oadm router --create
-    F0223 11:51:19.350154    2617 router.go:148] You must specify a .kubeconfig
-    file path containing credentials for connecting the router to the master
-    with --credentials
+    error: router could not be created; you must specify a .kubeconfig file path containing credentials for connecting the router to the master with --credentials
 
 Just about every form of communication with AE components is secured by
 SSL and uses various certificates and authentication methods. Even though we set
@@ -1220,8 +1210,8 @@ Let's check the pods:
 In the output, you should see the router pod status change to "running" after a
 few moments (it may take up to a few minutes):
 
-    POD                   CONTAINER(S)  HOST                                 STATUS
-    router-1-ats7z        router        ae-master.example.com/192.168.133.4   Running
+    POD             CONTAINER(S)  HOST                                 STATUS
+    router-1-ats7z  router        ae-master.example.com/192.168.133.4  Running
 
 Note: This output is huge, wide, and ugly. We're working on making it nicer. You
 can chime in here:
@@ -1427,7 +1417,7 @@ portion of `test-complete.json` to match your DNS environment.
 
     oc create -f test-complete.json
 
- You should see something like the following:
+You should see something like the following:
 
 [//]: # (TODO: check the name of imageStream)
 
@@ -1456,13 +1446,14 @@ common resources existing in the current project:
     oc status
     In project Atomic Enterprise Demo (demo)
 
-    service hello-atomic-service (172.30.17.237:27017 -> 8080)
+    service hello-atomic-service (172.30.196.23:27017 -> 8080)
+      hello-atomic deploys docker.io/openshift/hello-openshift:v0.4.3
+        #1 deployed 3 minutes ago - 1 pod
 
-    To see more information about a service or deployment config, use 'oc describe service <name>' or 'oc describe dc <name>'.
+    To see more information about a Service or DeploymentConfig, use 'osc describe service <name>' or 'osc describe dc <name>'.
+    You can use 'oc get all' to see lists of each of the types described above.
 
-You can use 'oc get all' to see lists of each of the types described above.
-`oc status` does not yet show bare pods or routes. The output will be
-more interesting when we get to builds and deployments.
+`oc status` does not yet show bare pods or routes.
 
 ### Verifying the Service
 Services are not externally accessible without a route being defined, because
@@ -1488,7 +1479,7 @@ to access the service via the route.
 ### Verifying the Routing
 Verifying the routing is a little complicated, but not terribly so. Since we
 specified that the router should land in the "infra" region, we know that its
-Docker container is on the master.
+Docker container is on the master. Make sure to log in as root.
 
 We can use `osc exec` to get a bash interactive shell inside the running
 router container. The following command will do that for us:
@@ -1537,6 +1528,8 @@ Go ahead and `exit` from the container.
     [root@router-1-2yefi /]# exit
     exit
 
+You can reach the route securely and check that it is using the right certificate:
+
 [//]: # (TODO: fix the text and cacert path)
 
     curl --cacert /etc/openshift/master/ca.crt \
@@ -1579,7 +1572,7 @@ Open a new terminal window as the `alice` user:
 [//]: # (TODO: fix ca path)
 [//]: # (TODO: fix "Authentication required ... XXX" text)
 
-and login to OpenShift:
+and login to Atomic Enterprise:
 
     oc login -u alice \
     --certificate-authority=/etc/openshift/master/ca.crt \
@@ -1643,7 +1636,7 @@ the user:
 
 https://github.com/openshift/origin/issues/2785
 
-It appears to be fixed but may not have made Early Access.
+It appears to be fixed but may not have made Early Access release.
 
 ### Deleting a Project
 Since we are done with this "demo" project, and since the `alice` user is a
@@ -1712,20 +1705,19 @@ as root:
 [//]: # (TODO: fix image paths)
 
     oc status
-
     In project default
 
-    service docker-registry (172.30.17.196:5000 -> 5000)
-      docker-registry deploys registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.4.3.2
-        #1 deployed about a minute ago
+    service docker-registry (172.30.53.223:5000)
+      docker-registry deploys registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.5.2.2
+        #1 deployed 4 hours ago - 1 pod
 
-    service kubernetes (172.30.17.2:443 -> 443)
+    service kubernetes (172.30.0.2:443)
 
-    service kubernetes-ro (172.30.17.1:80 -> 80)
+    service kubernetes-ro (172.30.0.1:80)
 
-    service router (172.30.17.129:80 -> 80)
-      router deploys registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.4.3.2
-        #1 deployed 7 minutes ago
+    service router (172.30.74.178:80)
+      router deploys registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.5.2.2
+        #1 deployed 7 minutes ago - 1 pod
 
 The project we have been working in when using the `root` user is called
 "default". This is a special project that always exists (you can delete it, but
@@ -1740,30 +1732,28 @@ registry's node selector).
 
 To quickly test your Docker registry, you can do the following:
 
-    curl `oc get services | grep registry | awk '{print $4":"$5}' | sed -e 's/\/.*//'`
+    curl -v `osc get services | grep registry | awk '{print $4":"$5}/v2/' | sed 's,/[^/]\+$,/v2/,'`
 
 And you should see [a 200
 response](https://docs.docker.com/registry/spec/api/#api-version-check) and a
-mostly empty body.  Your IP addresses will almost certainly be different.
+mostly empty body. Your IP addresses will almost certainly be different.
 
-~~~~
-* About to connect() to 172.30.17.114 port 5000 (#0)
-*   Trying 172.30.17.114...
-* Connected to 172.30.17.114 (172.30.17.114) port 5000 (#0)
-> GET /v2/ HTTP/1.1
-> User-Agent: curl/7.29.0
-> Host: 172.30.17.114:5000
-> Accept: */*
->
-< HTTP/1.1 200 OK
-< Content-Length: 2
-< Content-Type: application/json; charset=utf-8
-< Docker-Distribution-Api-Version: registry/2.0
-< Date: Tue, 26 May 2015 17:18:02 GMT
-<
-* Connection #0 to host 172.30.17.114 left intact
-{}    
-~~~~
+    * About to connect() to 172.30.53.223 port 5000 (#0)
+    *   Trying 172.30.53.223...
+    * Connected to 172.30.53.223 (172.30.53.223) port 5000 (#0)
+    > GET /v2/ HTTP/1.1
+    > User-Agent: curl/7.29.0
+    > Host: 172.30.53.223:5000
+    > Accept: */*
+    >
+    < HTTP/1.1 200 OK
+    < Content-Length: 2
+    < Content-Type: application/json; charset=utf-8
+    < Docker-Distribution-Api-Version: registry/2.0
+    < Date: Thu, 11 Jun 2015 13:07:11 GMT
+    <
+    * Connection #0 to host 172.30.53.223 left intact
+    {}
 
 If you get "connection reset by peer" you may have to wait a few more moments
 after the pod is running for the service proxy to update the endpoints necessary
@@ -1793,7 +1783,8 @@ Once there is an endpoint listed, the curl should work and the registry is avail
 [//]: # (TODO: can EAP example be modified to not require STI??)
 
 ## Conclusion
-This concludes the Early Access training. Look for more example applications to come!
+This concludes the Early Access Program training. Look for more example
+applications to come!
 
 # APPENDIX - DNSMasq setup
 In this training repository is a sample `dnsmasq.conf` file and a sample `hosts`
@@ -2066,7 +2057,7 @@ See these documentation sources for additional rsyslog configuration information
 
 In many production environments direct access to the web is not allowed.  In
 these situations there is typically an HTTP(S) proxy available.  Configuring
-OpenShift builds and deployments to use these proxies is as simple as setting
+AE deployments to use these proxies is as simple as setting
 standard environment variables.  The trick is knowing where to place them.
 
 ## Importing ImageStreams
@@ -2153,7 +2144,6 @@ configure the entire AWS environment, too.
 ## Generic Cloud Install
 
 [//]: # (TODO: is OSEv3 some key that needs to be changed?)
-
 
     [OSEv3:children]
     masters
