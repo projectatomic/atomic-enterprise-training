@@ -297,12 +297,7 @@ On all of your systems, grab the following docker images:
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
 
-[//]: # (TODO: check whether all of these are needed for this tutorial)
-
-    docker pull registry.access.redhat.com/openshift3_beta/ruby-20-rhel7
-    docker pull registry.access.redhat.com/openshift3_beta/mysql-55-rhel7
     docker pull openshift/hello-openshift:v0.4.3
-    docker pull openshift/ruby-20-centos7
 
 **Note:** If you built your VM for a previous beta version and at some point
 used an older version of Docker, you need to *reinstall* or *remove+install*
@@ -1865,8 +1860,6 @@ something like the following on your connected machine:
     docker pull registry.access.redhat.com/openshift3_beta/ose-deployer
     docker pull registry.access.redhat.com/openshift3_beta/ose-pod
     docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry
-    docker pull registry.access.redhat.com/openshift3_beta/ruby-20-rhel7
-    docker pull registry.access.redhat.com/openshift3_beta/mysql-55-rhel7
     docker pull openshift/hello-openshift
 
 This will fetch all of the images. You can then save them to a tarball:
@@ -1878,8 +1871,6 @@ This will fetch all of the images. You can then save them to a tarball:
     registry.access.redhat.com/openshift3_beta/ose-deployer \
     registry.access.redhat.com/openshift3_beta/ose-pod \
     registry.access.redhat.com/openshift3_beta/ose-docker-registry \
-    registry.access.redhat.com/openshift3_beta/ruby-20-rhel7 \
-    registry.access.redhat.com/openshift3_beta/mysql-55-rhel7 \
     openshift/hello-openshift
 
 **Note: On an SSD-equipped system this took ~2 min and uses 1.8GB of disk
