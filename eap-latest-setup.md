@@ -44,7 +44,6 @@
     - [Extra Credit](#extra-credit)
     - [Delete the Pod](#delete-the-pod)
     - [Quota Enforcement](#quota-enforcement)
-    - [Restart the Master](#restart-the-master)
   - [Services](#services)
   - [Routing](#routing)
     - [Creating a Wildcard Certificate](#creating-a-wildcard-certificate)
@@ -60,6 +59,7 @@
     - [Deleting a Project](#deleting-a-project)
   - [The Registry](#the-registry)
     - [Storage for the registry](#storage-for-the-registry)
+    - [Creating the registry](#creating-the-registry)
   - [Conclusion](#conclusion)
 - [APPENDIX - DNSMasq setup](#appendix---dnsmasq-setup)
     - [Verifying DNSMasq](#verifying-dnsmasq)
@@ -100,8 +100,7 @@ The master is the scheduler/orchestrator and the API endpoint for all commands.
 This is similar to OpenShift V2's "broker". We are also running the node software on the
 master.
 
-The "node" hosts user applications. The main difference is that "gears" have
-been replaced with Docker container instances. You will learn much more about
+The "node" hosts user applications. You will learn much more about
 the inner workings of Atomic throughout the rest of the document.
 
 ### Requirements
@@ -116,6 +115,7 @@ store). Both of their contents live in /var, so it is recommended that the
 majority of the storage be allocated to /var.
 
 [//]: # (TODO: what is a correct subscription name???)
+
 As part of signing up for the beta program, you should have received an
 evaluation subscription. This subscription gave you access to the beta software.
 You will need to use subscription manager to both register your VMs, and attach
@@ -638,6 +638,8 @@ From there, we can create a password for our users, Joe and Alice:
     htpasswd -b /etc/atomic-passwd joe redhat
     htpasswd -b /etc/atomic-passwd alice redhat
 
+Remember, you created these users previously.
+
 [//]: # (TODO: fix the /etc/openshift/master.yaml path)
 
 The Atomic Enterprise configuration is kept in a YAML file which currently lives at
@@ -936,9 +938,9 @@ Issue a `get pods` to see the details of how it was defined:
 [//]: # (TODO: get the right name of hello-openshift image)
 
     oc get pods
-    POD            IP        CONTAINER(S)   IMAGE(S)                           HOST                      LABELS              STATUS    CREATED     MESSAGE
-    hello-atomic                                                               os-node1.miminar.local/   name=hello-atomic   Pending   8 seconds   
-                             hello-atomic   openshift/hello-openshift:v0.4.3
+    POD            IP         CONTAINER(S)   IMAGE(S)                           HOST                                 LABELS              STATUS    CREATED      MESSAGE
+    hello-atomic   10.1.1.2                                                     ae-node1.example.com/192.168.133.3   name=hello-atomic   Running   16 seconds
+                              hello-atomic   openshift/hello-openshift:v0.4.3                                                            Running   2 seconds
 
 The output of this command shows all of the Docker containers in a pod, which
 explains some of the spacing.
@@ -1008,14 +1010,6 @@ Let's delete these pods quickly. As `joe` again:
 
 **Note:** You can delete most resources using "--all" but there is *no sanity
 check*. Be careful.
-
-### Restart the Master
-Go ahead and restart the master. This will make the new scheduler take effect.
-As `root` on your master:
-
-[//]: # (TODO: check the correct names of services)
-
-    systemctl restart atomic-master
 
 ## Services
 From the [Kubernetes
@@ -1175,7 +1169,7 @@ by the service associated with the route.
 AE's admin command set enables you to deploy router pods automatically.
 Let's try to create one:
 
-    oadm router --create
+    oadm router
     error: router could not be created; you must specify a .kubeconfig file path containing credentials for connecting the router to the master with --credentials
 
 Just about every form of communication with AE components is secured by
@@ -1217,8 +1211,9 @@ Let's check the pods:
 In the output, you should see the router pod status change to "running" after a
 few moments (it may take up to a few minutes):
 
-    POD             CONTAINER(S)  HOST                                 STATUS
-    router-1-ats7z  router        ae-master.example.com/192.168.133.4  Running
+    POD              IP         CONTAINER(S)   IMAGE(S)                                                                 HOST                                  LABELS                                                      STATUS    CREATED      MESSAGE
+    router-1-cutck   10.1.0.4                                                                                           ae-master.example.com/192.168.133.2   deployment=router-1,deploymentconfig=router,router=router   Running   18 minutes   
+                                router         registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.5.2.2                                                                                                     Running   18 minutes
 
 Note: This output is huge, wide, and ugly. We're working on making it nicer. You
 can chime in here:
@@ -1399,7 +1394,7 @@ and a corresponding route. It also includes a deployment configuration.
 
 In the JSON above:
 
-* There is a pod that has the label `name=hello-atomic` and the nodeSelector `region=primary`
+* There is a pod whose containers have the label `name=hello-atomic-label` and the nodeSelector `region=primary`
 * There is a service:
   * with the id `hello-atomic-service`
   * with the selector `name=hello-atomic`
@@ -1457,7 +1452,7 @@ common resources existing in the current project:
       hello-atomic deploys docker.io/openshift/hello-openshift:v0.4.3
         #1 deployed 3 minutes ago - 1 pod
 
-    To see more information about a Service or DeploymentConfig, use 'osc describe service <name>' or 'osc describe dc <name>'.
+    To see more information about a Service or DeploymentConfig, use 'oc describe service <name>' or 'oc describe dc <name>'.
     You can use 'oc get all' to see lists of each of the types described above.
 
 `oc status` does not yet show bare pods or routes.
@@ -1486,7 +1481,7 @@ to access the service via the route.
 ### Verifying the Routing
 Verifying the routing is a little complicated, but not terribly so. Since we
 specified that the router should land in the "infra" region, we know that its
-Docker container is on the master. Make sure to log in as root.
+Docker container is on the master. Log in there as `root`.
 
 We can use `osc exec` to get a bash interactive shell inside the running
 router container. The following command will do that for us:
@@ -1600,7 +1595,8 @@ pods` and so forth should show her the same thing as `joe`:
 
     [alice]$ osc get pods
     POD            IP         CONTAINER(S)   IMAGE(S)                           HOST                                 LABELS              STATUS    CREATED      MESSAGE
-    hello-atomic   10.1.1.2   hello-atomic   openshift/hello-openshift:v0.4.3   ae-node1.example.com/192.168.133.3   name=hello-atomic   Running   14 minutes   
+    hello-atomic   10.1.1.2                                                     ae-node1.example.com/192.168.133.3   name=hello-atomic   Running   14 minutes
+                              hello-atomic   openshift/hello-openshift:v0.4.3                                                            Running   14 minutes
 
 However, she cannot make changes:
 
@@ -1689,6 +1685,7 @@ directory with:
 
     mkdir -p /mnt/registry
 
+### Creating the registry
 `oadm` again comes to our rescue with a handy installer for the
 registry. As the `root` user, run the following:
 
@@ -1782,6 +1779,9 @@ And you will eventually see something like:
     No events.
 
 Once there is an endpoint listed, the curl should work and the registry is available.
+
+Highly available, actually. You should be able to delete the registry pod at any
+point in this training and have it return shortly after with all data intact.
 
 [//]: # (TODO: Missing template section)
 [//]: # (TODO: Are templates instantiable without UI?)
