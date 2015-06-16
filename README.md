@@ -31,6 +31,13 @@ Early Access Program training:
 - Beginnings of user/team management
 - Internal service DNS
 - Expanded documentation/explanations
+- Integrated sdn into OpenShift
+  - No separate openshift-sdn-node and openshift-sdn-master packages or services
+    You should remove openshift-sdn-master and openshift-sdn-node packages or
+    preferably reprovision your environment when installing Beta 4
+  - Openvswitch based implementation provided via 'openshift-sdn-ovs' plugin
+    package and configuring `networkPluginName: redhat/openshift-ovs-subnet` on
+    master and nodes. Ansible does this for you by default.
 [//]: # (- Web console and project basics)
 [//]: # (- Rollback / Activate)
 [//]: # (- Templates/Quickstarts from the console)

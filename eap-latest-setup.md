@@ -414,7 +414,7 @@ If you looked at the Ansible hosts file, note that our master
 section.
 
 Effectively, Ansible is going to install and configure node software on all the
-nodes and master software just on `ae-master.example.com` .
+nodes and master software just on `ae-master.example.com`.
 
 There was also some information about "regions" and "zones" in the hosts file.
 Let's talk about those concepts now.
@@ -1794,17 +1794,19 @@ This concludes the Early Access Program training. Look for more example
 applications to come!
 
 # APPENDIX - DNSMasq setup
-In this training repository is a sample `dnsmasq.conf` file and a sample `hosts`
-file. If you do not have the ability to manipulate DNS in your environment, or
-just want a quick and dirty way to set up DNS, you can install dnsmasq on one of
-your nodes. Do **not** install DNSMasq on your master. Atomic Enterprise now has an
-internal DNS service provided by Go's "SkyDNS" that is used for internal service
-communication, which will be explored more in future training materials.
+[dnsmasq.conf](./eap-latest/dnsmasq.conf) file and a sample [hosts](./eap-latest/hosts)
+file. If you do not have the ability to manipulate DNS in your
+environment, or just want a quick and dirty way to set up DNS, you can
+install dnsmasq on one of your nodes. Do **not** install DNSMasq on
+your master. OpenShift now has an internal DNS service provided by
+Go's "SkyDNS" that is used for internal service communication.
 
     yum -y install dnsmasq
 
-Replace `/etc/dnsmasq.conf` with the one from this repository, and replace
-`/etc/hosts` with the `hosts` file from this repository.
+Copy your current `/etc/resolv.conf` to a new file such as
+`/etc/resolv.conf.upstream`.  Ensure you *only* have an upstream
+resolver there (eg: Google DNS @ `8.8.8.8`), not the address of your
+dnsmasq server.
 
 Enable and start the dnsmasq service:
 
@@ -1818,9 +1820,8 @@ You will need to ensure the following, or fix the following:
 * Each of your systems has the same `/etc/hosts` file
 * Your master and nodes `/etc/resolv.conf` points to the IP address of the node
   running DNSMasq as the first nameserver
-* The second nameserver in `/etc/resolv.conf` on the node running dnsmasq points
-  to your corporate or upstream DNS resolver (eg: Google DNS @ 8.8.8.8)
-* That you also open port 53 (UDP) to allow DNS queries to hit the node
+* Your dnsmasq instance uses the `resolv-file` option to point to `/etc/resolv.conf.upstream` only.
+* That you also open port 53 (TCP and UDP) to allow DNS queries to hit the node
 
 Following this setup for dnsmasq will ensure that your wildcard domain works,
 that your hosts in the `example.com` domain resolve, that any other DNS requests
