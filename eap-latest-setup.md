@@ -13,7 +13,7 @@
     - [Git](#git)
     - [Preparing Each VM](#preparing-each-vm)
     - [Docker Storage Setup (optional, recommended)](#docker-storage-setup-optional-recommended)
-    - [Grab Docker Images (Optional, Recommended)](#grab-docker-images-optional-recommended)
+    - [Grab Docker Images (Optional, recommended)](#grab-docker-images-optional-recommended)
     - [Clone the Training Repository](#clone-the-training-repository)
     - [Add Development Users](#add-development-users)
   - [Ansible-based Installer](#ansible-based-installer)
@@ -24,6 +24,7 @@
     - [Configure Ansible](#configure-ansible)
     - [Modify Hosts](#modify-hosts)
     - [Run the Ansible Installer](#run-the-ansible-installer)
+    - [Add Cloud Domain](#add-cloud-domain)
   - [Regions and Zones](#regions-and-zones)
     - [Scheduler and Defaults](#scheduler-and-defaults)
     - [The NodeSelector](#the-nodeselector)
@@ -273,7 +274,7 @@ images and containers on the host.
     rm -rf /var/lib/docker/*
     systemctl start docker
 
-### Grab Docker Images (Optional, Recommended)
+### Grab Docker Images (Optional, recommended)
 **If you want** to pre-fetch Docker images to make the first few things in your
 environment happen **faster**, you'll need to first install Docker if you didn't
 install it when (optionally) configuring the Docker storage previously.
@@ -410,6 +411,20 @@ section.
 
 Effectively, Ansible is going to install and configure node software on all the
 nodes and master software just on `ae-master.example.com`.
+
+### Add Cloud Domain
+
+[//]: # (TODO: /etc/sysconfig/openshift-master -> ???)
+
+If you want default routes (we'll talk about these later) to automatically get
+the right domain (the one you configured earlier with your wildcard DNS), then
+you should edit `/etc/sysconfig/openshift-master` and add the following:
+
+[//]: # (TODO: OPENSHIFT_ROUTE_SUBDOMAIN -> ???)
+
+    OPENSHIFT_ROUTE_SUBDOMAIN=cloudapps.example.com
+
+Or modify it appropriately for your domain.
 
 There was also some information about "regions" and "zones" in the hosts file.
 Let's talk about those concepts now.
@@ -644,7 +659,7 @@ the `oauthConfig`'s `identityProviders` stanza so that it looks like the followi
     identityProviders:
     - challenge: true
       login: true
-      name: apache_auth
+      name: htpasswd_auth
       provider:
         apiVersion: v1
         file: /etc/atomic-passwd
