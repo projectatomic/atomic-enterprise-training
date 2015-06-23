@@ -61,6 +61,17 @@
   - [The Registry](#the-registry)
     - [Storage for the registry](#storage-for-the-registry)
     - [Creating the registry](#creating-the-registry)
+  - [Creating and Wiring Disparate Components](#creating-and-wiring-disparate-components)
+    - [Create a New Project](#create-a-new-project)
+    - [A Quick Aside on Templates](#a-quick-aside-on-templates)
+    - [Stand Up the Frontend](#stand-up-the-frontend)
+      - [Building of the Frontend](#building-of-the-frontend)
+      - [Frontend's deployment](#frontends-deployment)
+    - [Expose the Service](#expose-the-service)
+    - [Add the Database Template](#add-the-database-template)
+    - [Visit Your Application Again](#visit-your-application-again)
+    - [Replication Controllers](#replication-controllers)
+    - [Revisit the Webpage](#revisit-the-webpage)
   - [Conclusion](#conclusion)
 - [APPENDIX - DNSMasq setup](#appendix---dnsmasq-setup)
     - [Verifying DNSMasq](#verifying-dnsmasq)
@@ -1425,7 +1436,7 @@ If we work from the route down to the pod:
 If you are not using the `example.com` domain you will need to edit the route
 portion of `test-complete.json` to match your DNS environment.
 
-**Logged in as `joe`,** go ahead and use `osc` to create everything:
+**Logged in as `joe`,** go ahead and use `oc` to create everything:
 
     oc create -f test-complete.json
 
@@ -1493,7 +1504,7 @@ Verifying the routing is a little complicated, but not terribly so. Since we
 specified that the router should land in the "infra" region, we know that its
 Docker container is on the master. Log in there as `root`.
 
-We can use `osc exec` to get a bash interactive shell inside the running
+We can use `oc exec` to get a bash interactive shell inside the running
 router container. The following command will do that for us:
 
     oc exec -it -p $(oc get pods | grep router | awk '{print $1}' | head -n 1) /bin/bash
@@ -1603,7 +1614,7 @@ pods` and so forth should show her the same thing as `joe`:
 
 [//]: # (TODO: fix image names)
 
-    [alice]$ osc get pods
+    [alice]$ oc get pods
     POD            IP         CONTAINER(S)   IMAGE(S)                           HOST                                 LABELS              STATUS    CREATED      MESSAGE
     hello-atomic   10.1.1.2                                                     ae-node1.example.com/192.168.133.3   name=hello-atomic   Running   14 minutes
                               hello-atomic   openshift/hello-openshift:v0.4.3                                                            Running   14 minutes
@@ -1746,7 +1757,7 @@ registry's node selector).
 
 To quickly test your Docker registry, you can do the following:
 
-    curl -v `osc get services | grep registry | awk '{print $4":"$5}/v2/' | sed 's,/[^/]\+$,/v2/,'`
+    curl -v `oc get services | grep registry | awk '{print $4":"$5}/v2/' | sed 's,/[^/]\+$,/v2/,'`
 
 And you should see [a 200
 response](https://docs.docker.com/registry/spec/api/#api-version-check) and a
@@ -1793,11 +1804,261 @@ Once there is an endpoint listed, the curl should work and the registry is avail
 Highly available, actually. You should be able to delete the registry pod at any
 point in this training and have it return shortly after with all data intact.
 
+## Creating and Wiring Disparate Components
+This example involves a build of another application and a service that has two
+pods -- a "front-end" web tier and a "back-end" database tier. This application
+also makes use of auto-generated parameters and other neat features of Atomic
+Enterprise.
+
+[OpenShift
+Enterprise](https://docs.openshift.com/enterprise/3.0/welcome/index.html)
+provides [Source-to-image (S2I)
+framework](https://docs.openshift.com/enterprise/3.0/creating_images/sti.html)
+which makes it easy to produce an image from an application source code and
+store it in local registry service. In Atomic Enterprise, we'll have to do the
+crude work ourselves.
+
+### Create a New Project
+Open a terminal as `alice`:
+
+    # su - alice
+
+Then, create a project for this example:
+
+    oc new-project wiring --display-name="Exploring Parameters" \
+    --description='An exploration of wiring using parameters'
+
+Before continuing, `alice` will also need the training repository:
+
+    cd
+    git clone https://github.com/projectatomic/atomic-enterprise-training.git training
+
+### A Quick Aside on Templates
+From the [OpenShift
+documentation](http://docs.openshift.org/latest/dev_guide/templates.html):
+
+    A template describes a set of resources intended to be used together that
+    can be customized and processed to produce a configuration. Each template
+    can define a list of parameters that can be modified for consumption by
+    containers.
+
+As we mentioned previously, this template has some auto-generated parameters.
+For example, take a look at the following JSON:
+
+    "parameters": [
+      {
+        "name": "ADMIN_USERNAME",
+        "description": "administrator username",
+        "generate": "expression",
+        "from": "admin[A-Z0-9]{3}"
+      },
+
+This portion of the template's JSON tells OpenShift to generate an expression
+using a regex-like string that will be presented as ADMIN_USERNAME.
+
+### Stand Up the Frontend
+The first step will be to stand up the frontend of our application. For
+argument's sake, this could have just as easily been brand new vanilla code.
+However, to make things faster, we'll start with an application that already is
+looking for a DB, but won't fail spectacularly if one isn't found.
+
+#### Building of the Frontend
+We'll need to manually fetch the source and build an image out of it using docker.
+First, log in as `root` and checkout the application:
+
+    cd
+    git clone -b early-access https://github.com/projectatomic/ruby-hello-world
+    cd ruby-hello-world
+
+The image needs to be available to our nodes. Registry, we've setup earlier,
+is an ideal place for hosting it. In order to push the built image to the registry,
+we need to know its URL:
+
+    REGISTRY=`oc get services | grep registry | awk '{print $4":"$5}' | sed 's,/[^/]\+$,,'`
+
+There's a `Dockerfile` prepared for you in the repository. Let's use it to
+build the image.
+
+    docker build -t $REGISTRY/wiring/ruby-hello-world .
+
+Note the `$REGISTRY` prefix. It's the destination registry, where the image
+will be pushed:
+    
+    docker push $REGISTRY/wiring/ruby-hello-world
+
+After this, the image is available to all the nodes and we can finally deploy
+the app.
+
+#### Frontend's deployment
+
+[//]: # (TODO: explain templates)
+
+Once the image is built, we can return to Alice's training directory and
+instantiate frontent's template. Since we know that we want to talk to a
+database eventually, let's pass the right environment variables a *process*
+command:
+
+    cd ~/training/eap-latest
+    oc process -f frontend-template.json \
+        -v=DOCKER_REGISTRY=172.30.53.223:5000,MYSQL_USER=root,MYSQL_PASSWORD=redhat,MYSQL_DATABASE=mydb \
+        > frontend-config.json
+
+Above command parsed the `frontend-template.json`, replaced parameters with the values
+given, generated new values for those unspecified and saved it to `frontend-config.json`.
+
+Now go ahead and instantiate it:
+
+    oc create -f frontend-config.json
+
+You should see:
+
+    services/ruby-hello-world
+    imageStreams/ruby-hello-world
+    deploymentConfigs/frontend
+
+[//]: # (TODO: this shouldn't be necessary)
+
+And finally deploy it:
+
+    oc deploy --latest frontend
+
+Shortly after that, a new pod should be available:
+
+    oc get pods
+    POD                IP         CONTAINER(S)       IMAGE(S)                                     HOST                                   LABELS                                                          STATUS    CREATED      MESSAGE
+    frontend-5-a944c   10.1.0.6                                                                   ae-master.example.com/192.168.122.97   deployment=frontend-1,deploymentconfig=frontend,name=frontend   Running   50 seconds
+                                  ruby-hello-world   172.30.53.223:5000/wiring/ruby-hello-world                                                                                                            Running   49 seconds
+
+If you want to double-check that the pod is using right environment variables,
+just list them:
+
+    oc env --list dc/frontend
+    # deploymentconfigs frontend, container ruby-hello-world
+    ADMIN_USERNAME=adminATH
+    ADMIN_PASSWORD=XgjIFBoR
+    MYSQL_USER=root
+    MYSQL_PASSWORD=redhat
+    MYSQL_DATABASE=mydb
+
+### Expose the Service
+The `oc` command has a nifty subcommand called `expose` that will take a
+service and automatically create a route for us. It will do this in the defined
+cloud domain and in the current project as an additional "namespace" of sorts.
+For example, the steps above resulted in a service called "ruby-hello-world".
+We can use `expose` against it:
+
+    oc expose service ruby-hello-world
+
+After a few moments:
+
+    oc get route
+    NAME               HOST/PORT                                       PATH      SERVICE            LABELS
+    ruby-hello-world   ruby-hello-world.wiring.cloudapps.example.com             ruby-hello-world 
+
+Take a look at that hostname. It is
+
+* the service name
+* the namespace name
+* the route domain
+
+all concatenated together. In the future the `expose` command will allow a
+hostname to be specified directly.
+
+Now you should be able to access your application with your browser! Go ahead
+and do that now. You'll notice that the frontend is happy to run without a
+database, but it's not all that exciting. We'll fix that in a moment.
+
+### Add the Database Template
+Now we'll demonstrate adding a template to our own project. In
+the `eap-latest` folder there is a `mysql-template.json` file. As `alice`, go ahead
+and add it to your project:
+
+    oc create -f mysql-template.json
+
+You'll see:
+
+    templates/mysql-ephemeral
+
+Pass the template name to *process* command and make sure to give it the same
+values for `MYSQL_*` environment variables as for the frontend template.
+
+    oc process mysql-ephemaral \
+        -v=MYSQL_USER=root,MYSQL_PASSWORD=redhat,MYSQL_DATABASE=mydb \
+        | oc create -f -
+
+### Visit Your Application Again
+Visit your application again with your web browser. Why does it still say that
+there is no database?
+
+When the frontend was first built and created, there was no service called
+"database", so the environment variable `DATABASE_SERVICE_HOST` did not get
+populated with any values. Our database does exist now, and there is a service
+for it, but Atomic Enterprise could not "inject" those values into the frontend
+container.
+
+### Replication Controllers
+The easiest way to get this going? Just nuke the existing pod. There is a
+replication controller running for both the frontend and backend:
+
+    oc get replicationcontroller
+
+The replication controller is configured to ensure that we always have the
+desired number of replicas (instances) running. We can look at how many that
+should be:
+
+    oc describe rc ruby-hello-world-1
+
+So, if we kill the pod, the RC will detect that, and fire it back up. When it
+gets fired up this time, it will then have the `DATABASE_SERVICE_HOST` value,
+which means it will be able to connect to the DB, which means that we should no
+longer see the database error!
+
+As `alice`, go ahead and find your frontend pod, and then kill it:
+
+    oc delete pod `oc get pod | grep -e "hello-world-[0-9]" | grep -v build | awk '{print $1}'`
+
+You'll see something like:
+
+    pods/frontend-1-wcxiw
+
+That was the generated name of the pod when the replication controller stood it
+up the first time.
+
+After a few moments, we can look at the list of pods again:
+
+    oc get pod | grep frontend
+
+And we should see a different name for the pod this time:
+
+    frontend-1-4ikbl
+
+This shows that, underneath the covers, the RC restarted our pod. Since it was
+restarted, it should have a value for the `DATABASE_SERVICE_HOST` environment
+variable. Go to the node where the pod is running, and find the Docker container
+id as `root`:
+
+    docker inspect `docker ps | grep hello-world | grep run | awk \
+    '{print $1}'` | grep DATABASE
+
+The output will look something like:
+
+    "MYSQL_DATABASE=mydb",
+    "DATABASE_SERVICE_PORT_MYSQL=3306",
+    "DATABASE_SERVICE_PORT=3306",
+    "DATABASE_PORT=tcp://172.30.249.174:3306",
+    "DATABASE_PORT_3306_TCP=tcp://172.30.249.174:3306",
+    "DATABASE_PORT_3306_TCP_PROTO=tcp",
+    "DATABASE_SERVICE_HOST=172.30.249.174",
+    "DATABASE_PORT_3306_TCP_PORT=3306",
+    "DATABASE_PORT_3306_TCP_ADDR=172.30.249.174",
+
+### Revisit the Webpage
+Go ahead and revisit `http://ruby-hello-world.wiring.cloudapps.example.com` (or
+your appropriate FQDN) in your browser, and you should see that the application
+is now fully functional!
+
 [//]: # (TODO: Missing template section)
-[//]: # (TODO: Are templates instantiable without UI?)
-[//]: # (TODO: update the wiring example so that it doesn't require STI)
-[//]: # (TODO: update the rollback example so that it doens't require STI)
-[//]: # (TODO: can EAP example be modified to not require STI??)
+[//]: # (TODO: remake the rollback example)
 
 ## Conclusion
 This concludes the Early Access Program training. Look for more example

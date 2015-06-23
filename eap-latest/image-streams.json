@@ -117,63 +117,6 @@
       }
     },
     {
-            "kind": "ImageStream",
-            "apiVersion": "v1beta1",
-            "metadata": {
-                "name": "jboss-webserver3-tomcat7-openshift",
-                "annotations": {
-                    "description": "Provides JBoss Web Server v3 Tomcat 7 STI images."
-                }
-            },
-            "spec": {
-                "dockerImageRepository": "registry.access.redhat.com/jboss-webserver-3/tomcat7-openshift",
-                "tags": [
-                    {
-                        "name": "3.0",
-                        "dockerImageReference": "registry.access.redhat.com/jboss-webserver-3/tomcat7-openshift:3.0"
-                    }
-                ]
-            }
-        },
-        {
-            "kind": "ImageStream",
-            "apiVersion": "v1beta1",
-            "metadata": {
-                "name": "jboss-webserver3-tomcat8-openshift",
-                "annotations": {
-                    "description": "Provides JBoss Web Server v3 Tomcat 8 STI images."
-                }
-            },
-            "spec": {
-                "dockerImageRepository": "registry.access.redhat.com/jboss-webserver-3/tomcat8-openshift",
-                "tags": [
-                    {
-                        "name": "3.0",
-                        "dockerImageReference": "registry.access.redhat.com/jboss-webserver-3/tomcat8-openshift:3.0"
-                    }
-                ]
-            }
-        },
-        {
-            "kind": "ImageStream",
-            "apiVersion": "v1beta1",
-            "metadata": {
-                "name": "jboss-eap6-openshift",
-                "annotations": {
-                    "description": "Provides JBoss EAP 6 STI images."
-                }
-            },
-            "spec": {
-                "dockerImageRepository": "registry.access.redhat.com/jboss-eap-6/eap-openshift",
-                "tags": [
-                    {
-                        "name": "6.4",
-                        "dockerImageReference": "registry.access.redhat.com/jboss-eap-6/eap-openshift:6.4"
-                    }
-                ]
-            }
-        },
-    {
       "apiVersion": "v1beta1",
       "kind": "ImageStream",
       "metadata": {
@@ -252,27 +195,6 @@
               "iconClass": "icon-python",
               "tags": "builder,python",
               "version": "3.3"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "apiVersion": "v1beta1",
-      "kind": "ImageStream",
-      "metadata": {
-        "name": "wildfly-8-centos"
-      },
-      "spec": {
-        "dockerImageRepository": "openshift/wildfly-8-centos",
-        "tags": [
-          {
-            "name": "latest",
-            "annotations": {
-              "description" : "Build and run Java applications on Wildfly 8",
-              "iconClass" : "icon-wildfly",
-              "tags" : "builder,wildfly,java",
-              "version" : "8"
             }
           }
         ]

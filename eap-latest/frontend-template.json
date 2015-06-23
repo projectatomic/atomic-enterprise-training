@@ -1,0 +1,186 @@
+{
+  "kind": "Template",
+  "apiVersion": "v1beta3",
+  "metadata": {
+    "name": "wiring-frontend-example",
+    "annotations": {
+      "description": "This is a hand-wiring example for an application"
+    }
+  },
+  "objects": [
+    {
+      "kind": "Service",
+      "apiVersion": "v1beta3",
+      "metadata" : {
+        "name": "ruby-hello-world",
+        "creationTimestamp": null
+      },
+      "spec": {
+        "ports": [
+          {
+            "name": "web",
+            "protocol": "TCP",
+            "port": 8080,
+            "targetPort": 8080,
+            "nodePort": 0
+          }
+        ],
+        "selector": {
+          "name": "frontend"
+        },
+        "portalIP": "",
+        "type": "ClusterIP"
+      },
+      "status": {
+        "loadBalancer": {}
+      }
+    },
+    {
+      "kind": "ImageStream",
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name" : "ruby-hello-world",
+        "creationTimestamp": null
+      },
+      "spec" : {
+        "dockerImageRepository": "${DOCKER_REGISTRY}/wiring/ruby-hello-world"
+      },
+      "status": {
+        "dockerImageRepository": ""
+      }
+    },
+    {
+      "kind": "DeploymentConfig",
+      "apiVersion": "v1beta3",
+      "metadata": {
+        "name": "frontend",
+        "creationTimestamp": null
+      },
+      "spec": {
+        "strategy": {
+          "type": "Recreate"
+        },
+        "triggers": [
+          {
+            "type": "ImageChange",
+            "imageChangeParams": {
+              "automatic": true,
+              "containerNames": [
+                "ruby-hello-world"
+              ],
+              "from": {
+                "kind": "ImageStreamTag",
+                "name": "ruby-hello-world:latest"
+              },
+              "lastTriggeredImage": ""
+            }
+          },
+          {
+            "type": "ConfigChange"
+          }
+        ],
+        "replicas": 1,
+        "selector": {
+          "name": "frontend"
+        },
+        "template": {
+          "metadata": {
+            "creationTimestamp": null,
+            "labels": {
+              "name": "frontend"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "ruby-hello-world",
+                "image": "${DOCKER_REGISTRY}/wiring/ruby-hello-world",
+                "ports": [
+                  {
+                    "containerPort": 8080,
+                    "protocol": "TCP"
+                  }
+                ],
+                "env": [
+                  {
+                    "name": "ADMIN_USERNAME",
+                    "value": "${ADMIN_USERNAME}"
+                  },
+                  {
+                    "name": "ADMIN_PASSWORD",
+                    "value": "${ADMIN_PASSWORD}"
+                  },
+                  {
+                    "name": "MYSQL_USER",
+                    "value": "${MYSQL_USER}"
+                  },
+                  {
+                    "name": "MYSQL_PASSWORD",
+                    "value": "${MYSQL_PASSWORD}"
+                  },
+                  {
+                    "name": "MYSQL_DATABASE",
+                    "value": "${MYSQL_DATABASE}"
+                  }
+                ],
+                "resources": {},
+                "terminationMessagePath": "/dev/termination-log",
+                "imagePullPolicy": "IfNotPresent",
+                "capabilities": {},
+                "securityContext": {
+                  "capabilities": {},
+                  "privileged": false
+                },
+                "nodeSelector": {
+                  "region": "primary"
+                }
+              }
+            ],
+            "restartPolicy": "Always",
+            "dnsPolicy": "ClusterFirst"
+          }
+        }
+      },
+      "status": {}
+    }
+  ],
+  "parameters": [
+    {
+      "description": "administrator username",
+      "from": "admin[A-Z0-9]{3}",
+      "generate": "expression",
+      "name": "ADMIN_USERNAME"
+    },
+    {
+      "description": "administrator password",
+      "from": "[a-zA-Z0-9]{8}",
+      "generate": "expression",
+      "name": "ADMIN_PASSWORD"
+    },
+    {
+      "description": "database username",
+      "from": "user[A-Z0-9]{3}",
+      "generate": "expression",
+      "name": "MYSQL_USER"
+    },
+    {
+      "description": "database password",
+      "from": "[a-zA-Z0-9]{8}",
+      "generate": "expression",
+      "name": "MYSQL_PASSWORD"
+    },
+    {
+      "description": "database name",
+      "name": "MYSQL_DATABASE",
+      "value": "root"
+    },
+    {
+      "description": "docker registry url",
+      "name": "DOCKER_REGISTRY",
+      "value": "127.0.0.1:5000"
+    }
+  ],
+  "labels": {
+    "template": "wiring-frontend-template"
+  }
+}

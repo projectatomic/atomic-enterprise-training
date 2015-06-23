@@ -28,6 +28,7 @@ Early Access Program training:
 - Improvements and enhancements in the CLI
 - "Regions" and "Zones"
 - Quota enforcement
+- Templates from the console
 - Beginnings of user/team management
 - Internal service DNS
 - Expanded documentation/explanations
@@ -40,7 +41,6 @@ Early Access Program training:
     master and nodes. Ansible does this for you by default.
 [//]: # (- Web console and project basics)
 [//]: # (- Rollback / Activate)
-[//]: # (- Templates/Quickstarts from the console)
 [//]: # (- "integration" / webhooks)
 
 [The specific documentation is here.](eap-latest-setup.md)
