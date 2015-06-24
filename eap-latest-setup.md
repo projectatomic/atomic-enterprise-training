@@ -1269,7 +1269,7 @@ Currently the stats page is password protected with a static password, this
 password will be generated using a template parameter in the future, for now the
 password is `cEVu2hUb` and the username is `admin`.
 
-To make this acessible publicly, you will need to open this port on your master:
+To make this accessible publicly, you will need to open this port on your master:
 
     iptables -I OS_FIREWALL_ALLOW -p tcp -m tcp --dport 1936 -j ACCEPT
 
@@ -1278,7 +1278,7 @@ across reboots. However, don't restart the iptables service, as this would destr
 docker networking. Use the `iptables` command to change rules on a live system.
 
 Feel free to not open this port if you don't want to make this accessible, or if
-you only want it accessible via port fowarding, etc.
+you only want it accessible via port forwarding, etc.
 
 **Note**: Unlike OpenShift v2 this router is not specific to a given project, as
 such it's really intended to be viewed by cluster admins rather than project
@@ -1810,12 +1810,11 @@ pods -- a "front-end" web tier and a "back-end" database tier. This application
 also makes use of auto-generated parameters and other neat features of Atomic
 Enterprise.
 
-[OpenShift
-Enterprise](https://docs.openshift.com/enterprise/3.0/welcome/index.html)
+[OpenShift Enterprise](https://docs.openshift.com/enterprise/3.0/welcome/index.html)
 provides [Source-to-image (S2I)
 framework](https://docs.openshift.com/enterprise/3.0/creating_images/sti.html)
 which makes it easy to produce an image from an application source code and
-store it in local registry service. In Atomic Enterprise, we'll have to do the
+store it in local registry service. In Atomic Enterprise, we have to do the
 crude work ourselves.
 
 ### Create a New Project
@@ -1863,82 +1862,158 @@ However, to make things faster, we'll start with an application that already is
 looking for a DB, but won't fail spectacularly if one isn't found.
 
 #### Building of the Frontend
-We'll need to manually fetch the source and build an image out of it using docker.
+You'll need to manually fetch the source and build an image out of it using docker.
 First, log in as `root` and checkout the application:
 
     cd
     git clone -b early-access https://github.com/projectatomic/ruby-hello-world
     cd ruby-hello-world
 
-The image needs to be available to our nodes. Registry, we've setup earlier,
-is an ideal place for hosting it. In order to push the built image to the registry,
-we need to know its URL:
+The image needs to be available for download for your nodes. Registry, you've
+setup earlier, is an ideal place for hosting it. In order to push the built
+image to the registry, you need to know its URL:
 
     REGISTRY=`oc get services | grep registry | awk '{print $4":"$5}' | sed 's,/[^/]\+$,,'`
 
 There's a `Dockerfile` prepared for you in the repository. Let's use it to
 build the image.
 
-    docker build -t $REGISTRY/wiring/ruby-hello-world .
+    docker build -t $REGISTRY/openshift/ruby-hello-world .
 
 Note the `$REGISTRY` prefix. It's the destination registry, where the image
-will be pushed:
-    
-    docker push $REGISTRY/wiring/ruby-hello-world
+will be pushed. Let's wait with that until we set up an ImageStream.
 
-After this, the image is available to all the nodes and we can finally deploy
-the app.
+#### Wait, What's an ImageStream?
+If you think about one of the important things that Atomic Enterprise needs to
+do, it's to be able to deploy newer versions of user applications into Docker
+containers quickly. In OpenShift Enterprise, an "application" is really two
+pieces -- the starting image (the S2I builder) and the application code. While
+it's "obvious" that the deployed Docker containers need to be updated when
+application code changes, it may not have been so obvious that the deployed
+container needs to be updated as well if the **builder** image changes.
+
+For example, what if a security vulnerability in the Ruby runtime is
+discovered? It would be nice if we could automatically know this and take
+action. Triggers of deployment configuration let you define exactly that with
+particular image stream like below:
+
+    cat eap-latest/frontend-template.json | sed -n '/"triggers":/,+18p
+            "triggers": [
+              {
+                "type": "ImageChange",
+                "imageChangeParams": {
+                  "automatic": true,
+                  "containerNames": [
+                    "ruby-hello-world"
+                  ],
+                  "from": {
+                    "kind": "ImageStreamTag",
+                    "name": "ruby-hello-world:latest",
+                    "namespace": "openshift"
+                  },
+                  "lastTriggeredImage": ""
+                }
+              },
+              {
+                "type": "ConfigChange"
+              }
+
+Above can be translated as "launch a new deployment when its configuration is
+updated or `latest` tag in openshift/ruby-hello-world ImageStream gets
+updated".
+
+The `ImageStream` resource is, somewhat unsurprisingly, a definition for a
+stream of Docker images that might need to be paid attention to. By defining an
+`ImageStream` on "ruby-hello-world", for example, and then building an
+application against it, we have the ability with OpenShift to "know" when that
+`ImageStream` changes and take action based on that change. In our example from
+the previous paragraph, if the "ruby-hello-world" image changed in the
+repository defined by the `ImageStream`, we might automatically trigger a new
+build of our application code.
+
+#### Adding the ImageStreams
+Perform the following command as `root` in the `eap-latest`folder in order to
+add all of the images:
+
+    oc create -f image-streams.json -n openshift
+
+You will see the following:
+
+    imageStreams/mysql
+    imageStreams/ruby-hello-world
+
+Try to guess, which one belongs to the frontend and backend. If you inspect
+them, you'll notice that the latter doesn't specify a repository, which causes
+AE to look in its private registry for `openshift/ruby-hello-world`.
+
+What is the `openshift` project where we added these builders? This is a
+special project that can contain various elements that should be available to
+all users of the Atomic Enterprise environment.
+
+Let's inspect them:
+
+    oc get imagestreams -n openshift
+
+After several seconds, you'll see:
+
+    NAME               DOCKER REPO                                                 TAGS                       UPDATED
+    mysql              registry.access.redhat.com/openshift3_beta/mysql-55-rhel7   latest,v0.4.3.2,v0.5.2.2   5 minutes ago
+    ruby-hello-world   172.30.53.223:5000/openshift/ruby-hello-world
+
+Note that no tags are available for `ruby-hello-world`. Why? You haven't pushed
+it yet:
+    
+    docker push $REGISTRY/openshift/ruby-hello-world
+
+Once pushed, tags will be updated automatically:
+
+    oc get is -n openshift
+    NAME               DOCKER REPO                                                 TAGS                       UPDATED
+    mysql              registry.access.redhat.com/openshift3_beta/mysql-55-rhel7   latest,v0.4.3.2,v0.5.2.2   6 minutes ago
+    ruby-hello-world   172.30.53.223:5000/openshift/ruby-hello-world               latest                     5 seconds ago
+
+The image is now accessible from all the nodes via `openshift/ruby-hello-world`
+image stream. And we can finally proceed to frontend's deployment.
 
 #### Frontend's deployment
-
-[//]: # (TODO: explain templates)
-
-Once the image is built, we can return to Alice's training directory and
-instantiate frontent's template. Since we know that we want to talk to a
-database eventually, let's pass the right environment variables a *process*
+Return to Alice's training directory and instantiate objects stored in
+frontent's template. Since we know that we want to talk to a database
+eventually, you'll want to pass the right environment variables to a *process*
 command:
 
-    cd ~/training/eap-latest
-    oc process -f frontend-template.json \
-        -v=DOCKER_REGISTRY=172.30.53.223:5000,MYSQL_USER=root,MYSQL_PASSWORD=redhat,MYSQL_DATABASE=mydb \
+    [alice]$ cd ~/training/eap-latest
+    [alice]$ # Don't forget to set $REGISTRY variable
+    [alice]$ oc process -f frontend-template.json \
+        -v=MYSQL_USER=root,MYSQL_PASSWORD=redhat,MYSQL_DATABASE=mydb \
         > frontend-config.json
 
-Above command parsed the `frontend-template.json`, replaced parameters with the values
-given, generated new values for those unspecified and saved it to `frontend-config.json`.
+Above command parsed the `frontend-template.json`, replaced parameters with the
+values given, generated new values for those unspecified and saved it to
+`frontend-config.json`. `MYSQL_*` parameters may safely be omitted from the
+command. They would have been auto-generated for us.
 
-Now go ahead and instantiate it:
+Now go ahead and instantiate generated objects:
 
-    oc create -f frontend-config.json
+    [alice]$ oc create -f frontend-config.json
 
 You should see:
 
     services/ruby-hello-world
-    imageStreams/ruby-hello-world
     deploymentConfigs/frontend
 
-[//]: # (TODO: this shouldn't be necessary)
+Shortly after that, a new pod should be available. If you want to double-check
+that it is using right environment variables, just list them:
 
-And finally deploy it:
-
-    oc deploy --latest frontend
-
-Shortly after that, a new pod should be available:
-
-    oc get pods
-    POD                IP         CONTAINER(S)       IMAGE(S)                                     HOST                                   LABELS                                                          STATUS    CREATED      MESSAGE
-    frontend-5-a944c   10.1.0.6                                                                   ae-master.example.com/192.168.122.97   deployment=frontend-1,deploymentconfig=frontend,name=frontend   Running   50 seconds
-                                  ruby-hello-world   172.30.53.223:5000/wiring/ruby-hello-world                                                                                                            Running   49 seconds
-
-If you want to double-check that the pod is using right environment variables,
-just list them:
-
-    oc env --list dc/frontend
+    [alice]$ oc env --list dc/frontend
     # deploymentconfigs frontend, container ruby-hello-world
     ADMIN_USERNAME=adminATH
     ADMIN_PASSWORD=XgjIFBoR
     MYSQL_USER=root
     MYSQL_PASSWORD=redhat
     MYSQL_DATABASE=mydb
+
+If we'd omitted `MYSQL_*` parameters in the call to `oc process` above, we
+would have got random values similar to `ADMIN_*` parameters. 
 
 ### Expose the Service
 The `oc` command has a nifty subcommand called `expose` that will take a
@@ -1947,11 +2022,11 @@ cloud domain and in the current project as an additional "namespace" of sorts.
 For example, the steps above resulted in a service called "ruby-hello-world".
 We can use `expose` against it:
 
-    oc expose service ruby-hello-world
+    [alice]$ oc expose service ruby-hello-world
 
 After a few moments:
 
-    oc get route
+    [alice]$ oc get route
     NAME               HOST/PORT                                       PATH      SERVICE            LABELS
     ruby-hello-world   ruby-hello-world.wiring.cloudapps.example.com             ruby-hello-world 
 
@@ -1973,7 +2048,7 @@ Now we'll demonstrate adding a template to our own project. In
 the `eap-latest` folder there is a `mysql-template.json` file. As `alice`, go ahead
 and add it to your project:
 
-    oc create -f mysql-template.json
+    [alice]$ oc create -f mysql-template.json
 
 You'll see:
 
@@ -1982,9 +2057,21 @@ You'll see:
 Pass the template name to *process* command and make sure to give it the same
 values for `MYSQL_*` environment variables as for the frontend template.
 
-    oc process mysql-ephemaral \
+    [alice]$ oc process mysql-ephemaral \
         -v=MYSQL_USER=root,MYSQL_PASSWORD=redhat,MYSQL_DATABASE=mydb \
         | oc create -f -
+
+It may take a little while for the MySQL container to download (if you didn't
+pre-fetch it). It's a good idea to verify that the database is running before
+continuing.  If you don't happen to have a MySQL client installed you can still
+verify MySQL is running with curl:
+
+    curl `osc get services | grep database | awk '{print $4}'`:3306
+
+MySQL doesn't speak HTTP so you will see garbled output like this (however,
+you'll know your database is running!):
+
+    5.5.41%`:<^H*:��%I!geC`9=c\&mysql_native_password!��#08S01Got packets out of order
 
 ### Visit Your Application Again
 Visit your application again with your web browser. Why does it still say that
@@ -2000,13 +2087,13 @@ container.
 The easiest way to get this going? Just nuke the existing pod. There is a
 replication controller running for both the frontend and backend:
 
-    oc get replicationcontroller
+    [alice]$ oc get replicationcontroller
 
 The replication controller is configured to ensure that we always have the
 desired number of replicas (instances) running. We can look at how many that
 should be:
 
-    oc describe rc ruby-hello-world-1
+    [alice]$ oc describe rc frontend-1
 
 So, if we kill the pod, the RC will detect that, and fire it back up. When it
 gets fired up this time, it will then have the `DATABASE_SERVICE_HOST` value,
@@ -2015,7 +2102,7 @@ longer see the database error!
 
 As `alice`, go ahead and find your frontend pod, and then kill it:
 
-    oc delete pod `oc get pod | grep -e "hello-world-[0-9]" | grep -v build | awk '{print $1}'`
+    [alice]$ oc delete pod `oc get pod | grep -e "frontend-[0-9]" | grep -v build | awk '{print $1}'`
 
 You'll see something like:
 
@@ -2026,18 +2113,18 @@ up the first time.
 
 After a few moments, we can look at the list of pods again:
 
-    oc get pod | grep frontend
+    [alice]$ oc get pod | grep frontend
 
 And we should see a different name for the pod this time:
 
-    frontend-1-4ikbl
+    [alice]$ frontend-1-4ikbl
 
 This shows that, underneath the covers, the RC restarted our pod. Since it was
 restarted, it should have a value for the `DATABASE_SERVICE_HOST` environment
 variable. Go to the node where the pod is running, and find the Docker container
 id as `root`:
 
-    docker inspect `docker ps | grep hello-world | grep run | awk \
+    docker inspect `docker ps | grep hello-world | awk \
     '{print $1}'` | grep DATABASE
 
 The output will look something like:
