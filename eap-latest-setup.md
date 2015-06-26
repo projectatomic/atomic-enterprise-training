@@ -421,11 +421,9 @@ nodes and master software just on `ae-master.example.com`.
 
 ### Add Cloud Domain
 
-[//]: # (TODO: /etc/sysconfig/openshift-master -> ???)
-
 If you want default routes (we'll talk about these later) to automatically get
 the right domain (the one you configured earlier with your wildcard DNS), then
-you should edit `/etc/sysconfig/openshift-master` and add the following:
+you should edit `/etc/sysconfig/atomic-enterprise-master` and add the following:
 
 [//]: # (TODO: OPENSHIFT_ROUTE_SUBDOMAIN -> ???)
 
