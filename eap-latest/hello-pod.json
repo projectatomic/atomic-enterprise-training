@@ -12,7 +12,7 @@
     "containers": [
       {
         "name": "hello-atomic",
-        "image": "openshift/hello-openshift:v0.4.3",
+        "image": "atomicenterprise/hello-atomic:v0.5.2.2",
         "ports": [
           {
             "hostPort": 36061,

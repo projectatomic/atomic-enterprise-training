@@ -309,7 +309,7 @@ On all of your systems, grab the following docker images:
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
 
-    docker pull openshift/hello-openshift:v0.4.3
+    docker pull atomicenterprise/hello-atomic:v0.5.2.2
 
 **Note:** If you built your VM for a previous beta version and at some point
 used an older version of Docker, you need to *reinstall* or *remove+install*
@@ -889,8 +889,6 @@ go ahead and grab it inside Joe's home folder:
 In the `eap-latest` training folder, you can see the contents of our pod definition by
 using `cat`:
 
-[//]: # (TODO: make a new hello-openshift image and correct "image" attr below)
-
     cat hello-pod.json
     {
       "kind": "Pod",
@@ -906,7 +904,7 @@ using `cat`:
         "containers": [
           {
             "name": "hello-atomic",
-            "image": "openshift/hello-openshift:v0.4.3",
+            "image": atomicenterprise/hello-atomic:v0.5.2.2",
             "ports": [
               {
                 "hostPort": 36061,
@@ -956,12 +954,10 @@ the pod inside of it. The command should display the ID of the pod:
 
 Issue a `get pods` to see the details of how it was defined:
 
-[//]: # (TODO: get the right name of hello-openshift image)
-
     oc get pods
-    POD            IP         CONTAINER(S)   IMAGE(S)                           HOST                                 LABELS              STATUS    CREATED      MESSAGE
-    hello-atomic   10.1.1.2                                                     ae-node1.example.com/192.168.133.3   name=hello-atomic   Running   16 seconds
-                              hello-atomic   openshift/hello-openshift:v0.4.3                                                            Running   2 seconds
+    POD            IP         CONTAINER(S)   IMAGE(S)                                 HOST                                 LABELS              STATUS    CREATED      MESSAGE
+    hello-atomic   10.1.1.2                                                           ae-node1.example.com/192.168.133.3   name=hello-atomic   Running   16 seconds
+                              hello-atomic   atomicenterprise/hello-atomic:v0.5.2.2                                                            Running   2 seconds
 
 The output of this command shows all of the Docker containers in a pod, which
 explains some of the spacing.
@@ -975,9 +971,9 @@ bound to 8080 on the container, along with several other `ose-pod` containers.
 
 [//]: # (TODO: correct names, images and container IDs)
 
-    CONTAINER ID        IMAGE                              COMMAND              CREATED             STATUS              PORTS                    NAMES
-    ded86f750698        openshift/hello-openshift:v0.4.3   "/hello-openshift"   7 minutes ago       Up 7 minutes                                 k8s_hello-atomic.b69b23ff_hello-atomic_demo_522adf06-0f83-11e5-982b-525400a4dc47_f491f4be
-    405d63115a60        openshift3_beta/ose-pod:v0.5.2.2   "/pod"               7 minutes ago       Up 7 minutes        0.0.0.0:6061->8080/tcp   k8s_POD.ad86e772_hello-atomic_demo_522adf06-0f83-11e5-982b-525400a4dc47_6cc974dc
+    CONTAINER ID   IMAGE                                    COMMAND           CREATED         STATUS         PORTS                    NAMES
+    ded86f750698   atomicenterprise/hello-atomic:v0.5.2.2   "/hello-atomic"   7 minutes ago   Up 7 minutes                            k8s_hello-atomic.b69b23ff_hello-atomic_demo_522adf06-0f83-11e5-982b-525400a4dc47_f491f4be
+    405d63115a60   openshift3_beta/ose-pod:v0.5.2.2         "/pod"            7 minutes ago   Up 7 minutes   0.0.0.0:6061->8080/tcp   k8s_POD.ad86e772_hello-atomic_demo_522adf06-0f83-11e5-982b-525400a4dc47_6cc974dc
 
 [//]: # (TODO: openshift3_beta/ -> ???)
 
@@ -1372,7 +1368,7 @@ and a corresponding route. It also includes a deployment configuration.
                 "containers": [
                   {
                     "name": "hello-atomic",
-                    "image": "openshift/hello-openshift:v0.4.3",
+                    "image": "atomic-enterprise/hello-atomic:v0.5.2.2",
                     "ports": [
                       {
                         "name": "hello-atomic-tcp-8080",
@@ -1464,13 +1460,11 @@ You can verify this with other `oc` commands:
 AE provides a handy tool, `oc status`, to give you a summary of
 common resources existing in the current project:
 
-[//]: # (TODO: check the image name - hello-openshift:latest)
-
     oc status
     In project Atomic Enterprise Demo (demo)
 
     service hello-atomic-service (172.30.196.23:27017 -> 8080)
-      hello-atomic deploys docker.io/openshift/hello-openshift:v0.4.3
+      hello-atomic deploys docker.io/openshift/hello-atomic:v0.5.2.2
         #1 deployed 3 minutes ago - 1 pod
 
     To see more information about a Service or DeploymentConfig, use 'oc describe service <name>' or 'oc describe dc <name>'.
@@ -1615,9 +1609,9 @@ pods` and so forth should show her the same thing as `joe`:
 [//]: # (TODO: fix image names)
 
     [alice]$ oc get pods
-    POD            IP         CONTAINER(S)   IMAGE(S)                           HOST                                 LABELS              STATUS    CREATED      MESSAGE
-    hello-atomic   10.1.1.2                                                     ae-node1.example.com/192.168.133.3   name=hello-atomic   Running   14 minutes
-                              hello-atomic   openshift/hello-openshift:v0.4.3                                                            Running   14 minutes
+    POD            IP         CONTAINER(S)   IMAGE(S)                                 HOST                                 LABELS              STATUS    CREATED      MESSAGE
+    hello-atomic   10.1.1.2                                                           ae-node1.example.com/192.168.133.3   name=hello-atomic   Running   14 minutes
+                              hello-atomic   atomicenterprise/hello-atomic:v0.5.2.2                                                            Running   14 minutes
 
 However, she cannot make changes:
 
@@ -2223,7 +2217,7 @@ something like the following on your connected machine:
     docker pull registry.access.redhat.com/openshift3_beta/ose-deployer
     docker pull registry.access.redhat.com/openshift3_beta/ose-pod
     docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry
-    docker pull openshift/hello-openshift
+    docker pull atomicenterprise/hello-atomic
 
 This will fetch all of the images. You can then save them to a tarball:
 
@@ -2234,7 +2228,7 @@ This will fetch all of the images. You can then save them to a tarball:
     registry.access.redhat.com/openshift3_beta/ose-deployer \
     registry.access.redhat.com/openshift3_beta/ose-pod \
     registry.access.redhat.com/openshift3_beta/ose-docker-registry \
-    openshift/hello-openshift
+    atomicenterprise/hello-atomic
 
 **Note: On an SSD-equipped system this took ~2 min and uses 1.8GB of disk
 space**
