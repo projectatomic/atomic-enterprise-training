@@ -11,9 +11,9 @@ beta release these are the steps that can be followed:
 docker rm -f $(docker ps -a -q)
 docker rmi -f $(docker images -q)
 
-systemctl stop openshift-master openshift-node docker
+systemctl stop atomic-enterprise-master atomic-enterprise-node docker
 
-yum -y erase "*openshift*" "docker*"
+yum -y erase "*atomic-enterprise*" "docker*"
 # So your repo cache isn't out of date
 yum clean all
 
@@ -21,9 +21,11 @@ yum clean all
 systemctl reset-failed
 systemctl daemon-reload
 
+[//]: # (TODO: verify these paths are all correct)
+
 # Remove data, config, and training materials
 rm -rf /var/lib/openshift
-rm -rf /etc/sysconfig/*openshift*
+rm -rf /etc/sysconfig/*atomic-enterprise*
 rm -rf /etc/sysconfig/docker*
 rm -rf /etc/openshift/*
 rm -rf /root/.config/openshift
