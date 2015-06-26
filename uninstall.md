@@ -28,7 +28,7 @@ rm -rf /etc/sysconfig/docker*
 rm -rf /etc/openshift/*
 rm -rf /root/.config/openshift
 rm -rf /root/training
-rm -rf /root/openshift-ansible
+rm -rf /root/atomic-enterprise-ansible
 rm -rf /var/lib/docker
 
 # In case this was still around from a previous install
