@@ -389,11 +389,9 @@ accordingly.
 The configuration files for the Ansible installer are currently available on
 Github. Clone the repository:
 
-[//]: # (TODO: provide ansible repo/branch and path)
-
     cd
-    git clone https://github.com/detiber/openshift-ansible.git -b v3-beta4
-    cd ~/openshift-ansible
+    git https://github.com/projectatomic/atomic-enterprise-ansible.git
+    cd ~/atomic-enterprise-ansible
 
 ### Configure Ansible
 Copy the staged Ansible configuration files to `/etc/ansible`:
@@ -412,9 +410,7 @@ Install](#generic-cloud-install) to learn more about the syntax of Ansible's
 ### Run the Ansible Installer
 Now we can simply run the Ansible installer:
 
-[//]: # (TODO: fix the path)
-
-    ansible-playbook ~/openshift-ansible/playbooks/byo/config.yml
+    ansible-playbook ~/atomic-enterprise-ansible/playbooks/byo/config.yml
 
 If you looked at the Ansible hosts file, note that our master
 (ae-master.example.com) was present in both the `master` and the `node`
@@ -425,11 +421,9 @@ nodes and master software just on `ae-master.example.com`.
 
 ### Add Cloud Domain
 
-[//]: # (TODO: /etc/sysconfig/openshift-master -> ???)
-
 If you want default routes (we'll talk about these later) to automatically get
 the right domain (the one you configured earlier with your wildcard DNS), then
-you should edit `/etc/sysconfig/openshift-master` and add the following:
+you should edit `/etc/sysconfig/atomic-enterprise-master` and add the following:
 
 [//]: # (TODO: OPENSHIFT_ROUTE_SUBDOMAIN -> ???)
 
@@ -2526,9 +2520,9 @@ configure the entire AWS environment, too.
 **Testing the Auto-detected Values:**
 Run the openshift_facts playbook:
 
-[//]: # (TODO: fix the repo path)
+[//]: # (TODO: fix the facts file name)
 
-    cd ~/openshift-ansible
+    cd ~/atomic-enterprise-ansible
     ansible-playbook playbooks/byo/openshift_facts.yml
 
 The output will be similar to:
@@ -2585,7 +2579,7 @@ To override the the defaults, you can set the variables in your inventory. For e
 
 **Running ansible:**
 
-    ansible ~/openshift-ansible/playbooks/byo/config.yml
+    ansible ~/atomic-enterprise-ansible/playbooks/byo/config.yml
 
 ## Automated AWS Install With Ansible
 
@@ -2618,7 +2612,7 @@ To override the the defaults, you can set the variables in your inventory. For e
     export ROUTE_53_WILDCARD_ZONE=cloudapps.example.com
     export ROUTE_53_HOST_ZONE=example.com
 
-**Clone the openshift-ansible repo and configure helpful symlinks:**
+**Clone the atomic-enterprise-ansible repo and configure helpful symlinks:**
     ansible-playbook clone_and_setup_repo.yml
 
 **Configuring the Hosts:**
