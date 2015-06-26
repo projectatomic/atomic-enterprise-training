@@ -1,5 +1,13 @@
-# Atomic Enterprise
-Is a limited version of OpenShift v3 missing following features:
+# Atomic Enterprise Platform
+Based on the world’s leading enterprise Linux, Red Hat Atomic Enterprise Platform provides the foundation for production scale container deployments, utilizing the same core enabling technologies as Red Hat [OpenShift Enterprise 3](https://www.openshift.com/products/origin), including [Docker](https://www.docker.com/) as a Linux container format, and [Kubernetes](http://kubernetes.io/) for container orchestration. 
+
+For more information [read the press release](http://www.redhat.com/en/about/press-releases/red-hat-unveils-red-hat-atomic-enterprise-platform-production-deployment-secure-certified-linux-containers-scale).
+
+## Differences from Openshift v3
+The following features are added:
+- ...
+
+The following features are disabled:
 - STI (Source-To-Image builder)
 - UI (web console)
 - Docker Builder
@@ -10,9 +18,7 @@ and what that release covers.
 
 **Work in proggress**
 
-[//]: # (TODO: Update this once README.md ss updated in openshift-training repo)
-
-## Early Access Program based on OSO beta4
+## Early Access Program based on Openshift v3
 The following is an overview of the Atomic Enterprise (AE) features covered in
 Early Access Program training:
 - Installation and configuration of AE and atomic-sdn
@@ -44,33 +50,3 @@ Early Access Program training:
 [//]: # (- "integration" / webhooks)
 
 [The specific documentation is here.](eap-latest-setup.md)
-
-# Old Information
-The following info is provided for historical purposes only. It is no longer
-relevant, and may not even work
-
-## Early Access Program based on OSO beta3
-The following is an overview of the Atomic Enterprise (AE) features covered in
-Early Access Program training:
-- Installation and configuration of AE and atomic-sdn
-- Adding nodes to the master
-- Extensive command line use
-- Basic HTTP/S (only) routing. 
-- Work with supplied example applications
-- User authentication
-- Project quotas (display)
-- Complex / Tiered app deployment
-- Arbitrary docker image deployment
-- "integration" / webhooks
-- Ansible-based installer (non-interactive)
-- Improvements and enhancements in the CLI
-- "Regions" and "Zones"
-- Quota enforcement
-- Beginnings of user/team management
-- Internal service DNS
-- Expanded documentation/explanations
-[//]: # (- Web console and project basics)
-[//]: # (- Rollback / Activate)
-[//]: # (- Templates/Quickstarts from the console)
-
-[The specific documentation is here.](eap-beta3-setup.md)
