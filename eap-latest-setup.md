@@ -119,12 +119,26 @@ the inner workings of Atomic throughout the rest of the document.
 Each of the virtual machines should have 4+ GB of memory, 20+ GB of disk space,
 and the following configuration:
 
-* RHEL or RHEL AH >=7.1 (Note: 7.1 kernel is required for openvswitch)
+* Red Hat Enterprise Linux >=7.1 (Note: 7.1 kernel is required for openvswitch)
 * "Minimal" installation option
 
-The majority of storage requirements are related to Docker and etcd (the data
-store). Both of their contents live in /var, so it is recommended that the
-majority of the storage be allocated to /var.
+**Note:** At the current time, Atomic Enterprise Platform is not
+supported for deployment on Red Hat Enterprise Linux Atomic Host.
+
+The majority of storage requirements are related to Docker and etcd
+(the data store).  The etcd state lives in `/var/lib/etcd`, so be sure
+to allocate storage for it.  For Docker, the currently recommended
+storage configuration is "direct LVM" using
+[docker-storage-setup](https://github.com/projectatomic/docker-storage-setup/).
+Setting up an LVM managed pool will require dedicated block storage,
+or free space in an existing volume group.  Remaining metadata beyond
+raw images will be stored in `/var/lib/docker`.
+
+For virtual machines, one approach for the LVM-managed thin pool is to
+attach a secondary block device (Amazon EBS, OpenStack Cinder, etc.).  More
+information on storage management for Docker containers on Red Hat
+Enterprise Linux products is available [in the customer
+portal](https://access.redhat.com/articles/1492923).
 
 [//]: # (TODO: what is a correct subscription name???)
 
