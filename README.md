@@ -4,10 +4,7 @@ Based on the world’s leading enterprise Linux, Red Hat Atomic Enterprise Platf
 For more information [read the press release](http://www.redhat.com/en/about/press-releases/red-hat-unveils-red-hat-atomic-enterprise-platform-production-deployment-secure-certified-linux-containers-scale).
 
 ## Differences from Openshift v3
-The following features are added:
-- ...
-
-The following features are disabled:
+The following features are not provided with Atomic Enterprise, but are with OpenShift v3:
 - STI (Source-To-Image builder)
 - UI (web console)
 - Docker Builder
@@ -16,7 +13,7 @@ Atomic Enterprise will be introduced with a series of early access releases.
 This document provides an overview of the training materials for each release
 and what that release covers.
 
-**Work in proggress**
+**Work in progress**
 
 ## Early Access Program based on Openshift v3
 The following is an overview of the Atomic Enterprise (AE) features covered in
