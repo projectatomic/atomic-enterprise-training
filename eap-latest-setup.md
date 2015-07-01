@@ -663,9 +663,9 @@ installing:
 
 From there, we can create a password for our users, Joe and Alice:
 
-    touch /etc/atomic-passwd
-    htpasswd -b /etc/atomic-passwd joe redhat
-    htpasswd -b /etc/atomic-passwd alice redhat
+    touch /etc/openshift/openshift-passwd
+    htpasswd -b /etc/openshift/openshift-passwd joe redhat
+    htpasswd -b /etc/openshift/openshift-passwd alice redhat
 
 Remember, you created these users previously.
 
@@ -681,7 +681,7 @@ the `oauthConfig`'s `identityProviders` stanza so that it looks like the followi
       name: htpasswd_auth
       provider:
         apiVersion: v1
-        file: /etc/atomic-passwd
+        file: /etc/openshift/openshift-passwd
         kind: HTPasswdPasswordIdentityProvider
 
 More information on these configuration settings (and other identity providers) can be found here:
@@ -736,7 +736,7 @@ to look at some example JSON for project resource quota might look like:
 
 
     {
-      "apiVersion": "v1beta3",
+      "apiVersion": "v1",
       "kind": "ResourceQuota",
       "metadata": {
         "name": "test-quota"
