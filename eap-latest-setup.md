@@ -900,7 +900,7 @@ using `cat`:
     cat hello-pod.json
     {
       "kind": "Pod",
-      "apiVersion": "v1beta3",
+      "apiVersion": "v1",
       "metadata": {
         "name": "hello-atomic",
         "creationTimestamp": null,
@@ -912,7 +912,7 @@ using `cat`:
         "containers": [
           {
             "name": "hello-atomic",
-            "image": atomicenterprise/hello-atomic:v0.5.2.2",
+            "image": atomicenterprise/hello-atomic",
             "ports": [
               {
                 "hostPort": 36061,
