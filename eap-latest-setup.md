@@ -995,7 +995,7 @@ To verify that the app is working, you can issue a curl to the app's port *on
 the node where the pod is running*
 
     curl http://localhost:36061
-    Hello OpenShift!
+    Hello Atomic!
 
 Hooray!
 
