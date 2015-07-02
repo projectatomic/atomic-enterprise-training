@@ -66,6 +66,8 @@
     - [A Quick Aside on Templates](#a-quick-aside-on-templates)
     - [Stand Up the Frontend](#stand-up-the-frontend)
       - [Building of the Frontend](#building-of-the-frontend)
+      - [Wait, What's an ImageStream?](#wait-whats-an-imagestream)
+      - [Adding the ImageStreams](#adding-the-imagestreams)
       - [Frontend's deployment](#frontends-deployment)
     - [Expose the Service](#expose-the-service)
     - [Add the Database Template](#add-the-database-template)
@@ -217,13 +219,9 @@ can:
         subscription-manager repos --disable="*"
         subscription-manager repos \
         --enable="rhel-7-server-rpms" \
-        --enable="rhel-7-server-extras-rpms" \
-        --enable="rhel-7-server-optional-rpms" \
-        --enable="rhel-server-7-ose-beta-rpms"
+        --enable="rhel-7-server-extras-rpms"
 
-    **Note:** You will have had to register/attach your system first.  Also,
-    *rhel-server-7-ose-beta-rpms* is not a typo.  The name will change at GA to be
-    consistent with the RHEL channel names.
+    **Note:** You will have had to register/attach your system first.
 
 * Import the GPG key for beta:
 
@@ -238,6 +236,11 @@ On **each** VM:
 1. Install missing packages:
 
         yum -y install wget vim-enhanced net-tools bind-utils tmux git
+
+1. And for the time being, use this internal repository to get the latest Atomic
+   Enterprise RPMs:
+
+        wget -P /etc/yum.repos.d/ http://10.8.55.81/repos/atomic-enterprise.repo
 
 1. Update:
 
