@@ -315,15 +315,15 @@ You'll need to add `--insecure-registry 0.0.0.0/0` to your
 
 On all of your systems, grab the following docker images:
 
-    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-pod:v0.5.2.2
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.5.2.2
+    docker pull registry.access.redhat.com/openshift3/ose-haproxy-router
+    docker pull registry.access.redhat.com/openshift3/ose-deployer
+    docker pull registry.access.redhat.com/openshift3/ose-pod:
+    docker pull registry.access.redhat.com/openshift3/ose-docker-registry
 
 It may be advisable to pull the following Docker images as well, since they are
 used during the various labs:
 
-    docker pull atomicenterprise/hello-atomic:v0.5.2.2
+    docker pull atomicenterprise/hello-atomic
 
 **Note:** If you built your VM for a previous beta version and at some point
 used an older version of Docker, you need to *reinstall* or *remove+install*
@@ -404,7 +404,7 @@ The configuration files for the Ansible installer are currently available on
 Github. Clone the repository:
 
     cd
-    git https://github.com/projectatomic/atomic-enterprise-ansible.git
+    git clone https://github.com/projectatomic/atomic-enterprise-ansible.git
     cd ~/atomic-enterprise-ansible
 
 ### Configure Ansible
@@ -2221,10 +2221,10 @@ something like the following on your connected machine:
 
 [//]: # (TODO: change image names?)
 
-    docker pull registry.access.redhat.com/openshift3_beta/ose-haproxy-router
-    docker pull registry.access.redhat.com/openshift3_beta/ose-deployer
-    docker pull registry.access.redhat.com/openshift3_beta/ose-pod
-    docker pull registry.access.redhat.com/openshift3_beta/ose-docker-registry
+    docker pull registry.access.redhat.com/openshift3/ose-haproxy-router
+    docker pull registry.access.redhat.com/openshift3/ose-deployer
+    docker pull registry.access.redhat.com/openshift3/ose-pod
+    docker pull registry.access.redhat.com/openshift3/ose-docker-registry
     docker pull atomicenterprise/hello-atomic
 
 This will fetch all of the images. You can then save them to a tarball:
