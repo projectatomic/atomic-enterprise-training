@@ -1205,7 +1205,7 @@ router image, since the tooling defaults to upstream/origin:
 
 [//]: # (TODO: /etc/openshift/master/openshift-router.kubeconfig)
 
-    osadm router --dry-run \
+    oadm router --dry-run \
     --credentials=/etc/openshift/master/openshift-router.kubeconfig
 
 Adding that would be enough to allow the command to proceed, but if we want
@@ -2068,7 +2068,7 @@ pre-fetch it). It's a good idea to verify that the database is running before
 continuing.  If you don't happen to have a MySQL client installed you can still
 verify MySQL is running with curl:
 
-    curl `osc get services | grep database | awk '{print $4}'`:3306
+    curl `oc get services | grep database | awk '{print $4}'`:3306
 
 MySQL doesn't speak HTTP so you will see garbled output like this (however,
 you'll know your database is running!):
