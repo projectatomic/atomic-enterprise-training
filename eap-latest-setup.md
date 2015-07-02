@@ -404,7 +404,7 @@ The configuration files for the Ansible installer are currently available on
 Github. Clone the repository:
 
     cd
-    git https://github.com/projectatomic/atomic-enterprise-ansible.git
+    git clone https://github.com/projectatomic/atomic-enterprise-ansible.git
     cd ~/atomic-enterprise-ansible
 
 ### Configure Ansible
