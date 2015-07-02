@@ -66,6 +66,8 @@
     - [A Quick Aside on Templates](#a-quick-aside-on-templates)
     - [Stand Up the Frontend](#stand-up-the-frontend)
       - [Building of the Frontend](#building-of-the-frontend)
+      - [Wait, What's an ImageStream?](#wait-whats-an-imagestream)
+      - [Adding the ImageStreams](#adding-the-imagestreams)
       - [Frontend's deployment](#frontends-deployment)
     - [Expose the Service](#expose-the-service)
     - [Add the Database Template](#add-the-database-template)
