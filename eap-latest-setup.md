@@ -267,7 +267,7 @@ must provision your host to fit one of these three scenarios :
 `docker-storage-setup` with no additional configuration, it will allocate the
 remaining space for the thinpool.
 
-*  A dedicated LVM volume group where you'd like to reate your thinpool
+*  A dedicated LVM volume group where you'd like to create your thinpool
 
         echo <<EOF > /etc/sysconfig/docker-storage-setup
         VG=docker-vg
@@ -361,7 +361,7 @@ will create user accounts for two non-privileged users of AE, *joe* and
 We will come back to these users later. Remember to do this on the `master`
 system, and not the nodes.
 
-[//]: # (TODO: check that ansible intaller will be ready)
+[//]: # (TODO: check that ansible installer will be ready)
 
 ## Ansible-based Installer
 The installer uses Ansible. Eventually there will be an interactive text-based
@@ -613,7 +613,7 @@ each "zone" in that datacenter might be on its own power system with its own
 dedicated networking, this would ensure that, within the datacenter, pods of an
 application would be spread across power/network segments.
 
-The documentation link has some more complicated examples. The topoligical
+The documentation link has some more complicated examples. The topological
 possibilities are endless!
 
 ### Node Labels
@@ -1048,7 +1048,7 @@ documentation](https://github.com/GoogleCloudPlatform/kubernetes/blob/master/doc
     services is to provide a bridge for non-Kubernetes-native applications to access
     backends without the need to write code that is specific to Kubernetes. A
     service offers clients an IP and port pair which, when accessed, redirects to
-    the appropriate backends. The set of pods targetted is determined by a label
+    the appropriate backends. The set of pods targeted is determined by a label
     selector.
 
 If you think back to the simple pod we created earlier, there was a "label":
@@ -1216,7 +1216,7 @@ this router to work for our environment, we also need to specify the beta
 router image (the tooling defaults to upstream/origin otherwise) and we need
 to supply the wildcard cert/key that we created for the cloud domain.
 
-[//]: # (TODO: /var/lib/openshift/openshift.local.certiciates/openshift-router)
+[//]: # (TODO: /var/lib/openshift/openshift.local.certificates/openshift-router)
 [//]: # (TODO: registry.access.redhat.com/openshift3_beta/ose-${component}:${version})
 
     oadm router --default-cert=cloudapps.router.pem \
@@ -1875,7 +1875,7 @@ First, log in as `root` and checkout the application:
     cd ruby-hello-world
 
 The image needs to be available for download for your nodes. Registry, you've
-setup earlier, is an ideal place for hosting it. In order to push the built
+set up earlier, is an ideal place for hosting it. In order to push the built
 image to the registry, you need to know its URL:
 
     REGISTRY=`oc get services | grep registry | awk '{print $4":"$5}' | sed 's,/[^/]\+$,,'`
@@ -1981,8 +1981,8 @@ The image is now accessible from all the nodes via `openshift/ruby-hello-world`
 image stream. And we can finally proceed to frontend's deployment.
 
 #### Frontend's deployment
-Return to Alice's training directory and instantiate objects stored in
-frontent's template. Since we know that we want to talk to a database
+Return to Alice's training directory and instantiate objects stored in the
+frontend's template. Since we know that we want to talk to a database
 eventually, you'll want to pass the right environment variables to a *process*
 command:
 
@@ -2062,7 +2062,7 @@ You'll see:
 Pass the template name to *process* command and make sure to give it the same
 values for `MYSQL_*` environment variables as for the frontend template.
 
-    [alice]$ oc process mysql-ephemaral \
+    [alice]$ oc process mysql-ephemeral \
         -v=MYSQL_USER=root,MYSQL_PASSWORD=redhat,MYSQL_DATABASE=mydb \
         | oc create -f -
 
@@ -2347,7 +2347,7 @@ Common problems
 [//]: # (TODO: /var/log/openshift -> ???)
 
 Given the distributed nature of Atomic Enterprise you may find it beneficial to
-aggregate logs from your AE infastructure services. By default, AE
+aggregate logs from your AE infrastructure services. By default, AE
 services log to the systemd journal and rsyslog persists those log messages to
 `/var/log/messages`. We'll reconfigure rsyslog to write these entries to
 `/var/log/openshift` and configure the master host to accept log data from the
