@@ -663,9 +663,9 @@ installing:
 
 From there, we can create a password for our users, Joe and Alice:
 
-    touch /etc/atomic-passwd
-    htpasswd -b /etc/atomic-passwd joe redhat
-    htpasswd -b /etc/atomic-passwd alice redhat
+    touch /etc/openshift/openshift-passwd
+    htpasswd -b /etc/openshift/openshift-passwd joe redhat
+    htpasswd -b /etc/openshift/openshift-passwd alice redhat
 
 Remember, you created these users previously.
 
@@ -681,7 +681,7 @@ the `oauthConfig`'s `identityProviders` stanza so that it looks like the followi
       name: htpasswd_auth
       provider:
         apiVersion: v1
-        file: /etc/atomic-passwd
+        file: /etc/openshift/openshift-passwd
         kind: HTPasswdPasswordIdentityProvider
 
 More information on these configuration settings (and other identity providers) can be found here:
@@ -736,7 +736,7 @@ to look at some example JSON for project resource quota might look like:
 
 
     {
-      "apiVersion": "v1beta3",
+      "apiVersion": "v1",
       "kind": "ResourceQuota",
       "metadata": {
         "name": "test-quota"
@@ -851,7 +851,7 @@ Then, execute:
 Atomic Enterprise, by default, is using a self-signed SSL certificate, so we must point
 our tool at the CA file.
 
-The `login` process created a file called `config` in the `~/.config/openshift`
+The `login` process created a file called `config` in the `~/.kube/config`
 folder. Take a look at it, and you'll see something like the following:
 
 [//]: # (TODO: /var/lib/openshift/openshift.local.certificates -> ???)
@@ -900,7 +900,7 @@ using `cat`:
     cat hello-pod.json
     {
       "kind": "Pod",
-      "apiVersion": "v1beta3",
+      "apiVersion": "v1",
       "metadata": {
         "name": "hello-atomic",
         "creationTimestamp": null,
@@ -912,7 +912,7 @@ using `cat`:
         "containers": [
           {
             "name": "hello-atomic",
-            "image": atomicenterprise/hello-atomic:v0.5.2.2",
+            "image": atomicenterprise/hello-atomic",
             "ports": [
               {
                 "hostPort": 36061,
@@ -995,7 +995,7 @@ To verify that the app is working, you can issue a curl to the app's port *on
 the node where the pod is running*
 
     curl http://localhost:36061
-    Hello OpenShift!
+    Hello Atomic!
 
 Hooray!
 
