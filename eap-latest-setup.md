@@ -219,7 +219,8 @@ can:
         subscription-manager repos --disable="*"
         subscription-manager repos \
         --enable="rhel-7-server-rpms" \
-        --enable="rhel-7-server-extras-rpms"
+        --enable="rhel-7-server-extras-rpms" \
+        --enable="rhel-server-7-ose-beta-rpms"
 
     **Note:** You will have had to register/attach your system first.
 
