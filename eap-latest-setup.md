@@ -241,7 +241,7 @@ On **each** VM:
 1. And for the time being, use this internal repository to get the latest Atomic
    Enterprise RPMs:
 
-        wget -P /etc/yum.repos.d/ http://10.8.55.81/repos/atomic-enterprise.repo
+        curl -o /etc/yum.repos.d/atomic-enterprise.repo http://10.8.55.81/repos/atomic-enterprise.repo
 
 1. Update:
 
