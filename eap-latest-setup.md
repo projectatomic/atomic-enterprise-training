@@ -219,7 +219,8 @@ can:
         subscription-manager repos --disable="*"
         subscription-manager repos \
         --enable="rhel-7-server-rpms" \
-        --enable="rhel-7-server-extras-rpms"
+        --enable="rhel-7-server-extras-rpms" \
+        --enable="rhel-server-7-ose-beta-rpms"
 
     **Note:** You will have had to register/attach your system first.
 
@@ -320,7 +321,7 @@ On all of your systems, grab the following docker images:
 
     docker pull registry.access.redhat.com/openshift3/ose-haproxy-router
     docker pull registry.access.redhat.com/openshift3/ose-deployer
-    docker pull registry.access.redhat.com/openshift3/ose-pod:
+    docker pull registry.access.redhat.com/openshift3/ose-pod
     docker pull registry.access.redhat.com/openshift3/ose-docker-registry
 
 It may be advisable to pull the following Docker images as well, since they are
