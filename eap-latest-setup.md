@@ -7,24 +7,14 @@
     - [Architecture](#architecture)
     - [Requirements](#requirements)
   - [Setting Up the Environment](#setting-up-the-environment)
-    - [Use a Terminal Window Manager](#use-a-terminal-window-manager)
-    - [DNS](#dns)
     - [Assumptions](#assumptions)
+    - [DNS](#dns)
     - [Git](#git)
     - [Preparing Each VM](#preparing-each-vm)
-    - [Docker Storage Setup (optional, recommended)](#docker-storage-setup-optional-recommended)
-    - [Grab Docker Images (Optional, recommended)](#grab-docker-images-optional-recommended)
-    - [Clone the Training Repository](#clone-the-training-repository)
-    - [Add Development Users](#add-development-users)
-  - [Ansible-based Installer](#ansible-based-installer)
-    - [Install Ansible](#install-ansible)
-    - [Generate SSH Keys](#generate-ssh-keys)
-    - [Distribute SSH Keys](#distribute-ssh-keys)
-    - [Clone the Ansible Repository](#clone-the-ansible-repository)
-    - [Configure Ansible](#configure-ansible)
-    - [Modify Hosts](#modify-hosts)
-    - [Run the Ansible Installer](#run-the-ansible-installer)
+    - [Preparing The Master VM](#preparing-the-master-vm)
+    - [Run the installer (on the master VM)](#run-the-installer-on-the-master-vm)
     - [Add Cloud Domain](#add-cloud-domain)
+  - [Launch your very first pod](#launch-your-very-first-pod)
   - [Regions and Zones](#regions-and-zones)
     - [Scheduler and Defaults](#scheduler-and-defaults)
     - [The NodeSelector](#the-nodeselector)
@@ -75,6 +65,7 @@
     - [Replication Controllers](#replication-controllers)
     - [Revisit the Webpage](#revisit-the-webpage)
   - [Conclusion](#conclusion)
+- [APPENDIX - Docker Storage Setup](#appendix---docker-storage-setup)
 - [APPENDIX - DNSMasq setup](#appendix---dnsmasq-setup)
     - [Verifying DNSMasq](#verifying-dnsmasq)
 - [APPENDIX - Import/Export of Docker Images (Disconnected Use)](#appendix---importexport-of-docker-images-disconnected-use)
@@ -127,20 +118,15 @@ and the following configuration:
 **Note:** At the current time, Atomic Enterprise Platform is not
 supported for deployment on Red Hat Enterprise Linux Atomic Host.
 
-The majority of storage requirements are related to Docker and etcd
-(the data store).  The etcd state lives in `/var/lib/etcd`, so be sure
-to allocate storage for it.  For Docker, the currently recommended
-storage configuration is "direct LVM" using
+The majority of storage requirements are related to Docker, etcd, and a docker
+image repository.  The etcd state lives in `/var/lib/atomic-enterprise/openshift.local.etcd/`,
+so be sure to allocate storage for it. Leave space somewhere on the master to store
+images and metadata for the docker registry. In later examples we will use `/mnt/registry`.
+For Docker, the currently recommended storage configuration is "direct LVM" using
 [docker-storage-setup](https://github.com/projectatomic/docker-storage-setup/).
-Setting up an LVM managed pool will require dedicated block storage,
-or free space in an existing volume group.  Remaining metadata beyond
-raw images will be stored in `/var/lib/docker`.
 
-For virtual machines, one approach for the LVM-managed thin pool is to
-attach a secondary block device (Amazon EBS, OpenStack Cinder, etc.).  More
-information on storage management for Docker containers on Red Hat
-Enterprise Linux products is available [in the customer
-portal](https://access.redhat.com/articles/1492923).
+Please see [APPENDIX - Docker Storage Setup](#appendix---docker-storage-setup)
+for information on setting up storage for docker.
 
 [//]: # (TODO: what is a correct subscription name???)
 
@@ -149,58 +135,54 @@ evaluation subscription. This subscription gave you access to the beta software.
 You will need to use subscription manager to both register your VMs, and attach
 them to the *Atomic Enterprise High Touch Beta* subscription.
 
-All of your VMs should be on the same logical network and be able to access one
-another.
-
-In almost all cases, when referencing VMs you must use hostnames and the
-hostnames that you use must match the output of `hostname -f` on each of your
-nodes. Forward DNS resolution of hostnames is an **absolute requirement**. This
-training document assumes the following configuration:
-
-* ae-master.example.com (master+node)
-* ae-node1.example.com
-* ae-node2.example.com
-
-We do our best to point out where you will need to change things if your
-hostnames do not match.
-
-If you cannot create real forward resolving DNS entries in your DNS system, you
-will need to set up your own DNS server in the beta testing environment.
-Documentation is provided on DNSMasq in an appendix, [APPENDIX - DNSMasq
-setup](#appendix---dnsmasq-setup)
-
-Remember that NetworkManager may make changes to your DNS
-configuration/resolver/etc. You will need to properly configure your interfaces'
-DNS settings and/or configure NetworkManager appropriately.
-
-More information on NetworkManager can be found in this comment:
-
-    https://github.com/openshift/training/issues/193#issuecomment-105693742
-
 ## Setting Up the Environment
-### Use a Terminal Window Manager
-We **strongly** recommend that you use some kind of terminal window manager
-(Screen, Tmux).
-
-### DNS
-You will need to have a wildcard for a DNS zone resolve, ultimately, to the IP
-address of the OpenShift router. For this training, we will ensure that the
-router will end up on the OpenShift server that is running the master. Go
-ahead and create a wildcard DNS entry for "cloudapps" (or something similar),
-with a low TTL, that points to the public IP address of your master.
-
-For example:
-
-    *.cloudapps.example.com. 300 IN  A 192.168.133.2
-
-It is possible to use dnsmasq inside of your beta environment to handle these
-duties. See the [appendix on dnsmasq](#appendix---dnsmasq-setup) if you can't
-easily manipulate your existing DNS environment.
-
 ### Assumptions
 In most cases you will see references to "example.com" and other FQDNs related
 to it. If you choose not to use "example.com" in your configuration, that is
 fine, but remember that you will have to adjust files and actions accordingly.
+
+### DNS
+
+- All of your VMs must be able to access one another by each other's hostname.
+
+  In almost all cases, when referencing VMs you must use hostnames and the
+  hostnames that you use must match the output of `hostname -f` on each of your
+  nodes. Forward DNS resolution of hostnames is an **absolute requirement**. This
+  training document assumes the following configuration:
+
+  * ae-master.example.com (master+node)
+  * ae-node1.example.com
+  * ae-node2.example.com
+
+  We do our best to point out where you will need to change things if your
+  hostnames do not match.
+
+- If you cannot create real forward resolving DNS entries in your DNS system, you
+  will need to set up your own DNS server in the beta testing environment.
+  Documentation is provided on DNSMasq in an appendix, [APPENDIX - DNSMasq
+  setup](#appendix---dnsmasq-setup)
+
+  Remember that NetworkManager may make changes to your DNS
+  configuration/resolver/etc. You will need to properly configure your interfaces'
+  DNS settings and/or configure NetworkManager appropriately.
+
+  More information on NetworkManager can be found in this comment:
+
+    https://github.com/openshift/training/issues/193#issuecomment-105693742
+
+- You will need to have a wildcard for a DNS zone resolve, ultimately, to the IP
+  address of the OpenShift router. For this training, we will ensure that the
+  router will end up on the OpenShift server that is running the master. Go
+  ahead and create a wildcard DNS entry for "cloudapps" (or something similar),
+  with a low TTL, that points to the public IP address of your master.
+
+  For example:
+
+    *.cloudapps.example.com. 300 IN  A 192.168.133.2
+
+  It is possible to use dnsmasq inside of your beta environment to handle these
+  duties. See the [appendix on dnsmasq](#appendix---dnsmasq-setup) if you can't
+  easily manipulate your existing DNS environment.
 
 ### Git
 You will either need internet access or read and write access to an internal
@@ -209,233 +191,130 @@ in the labs.
 
 ### Preparing Each VM
 Once your VMs are built and you have verified DNS and network connectivity you
-can:
+should:
 
 [//]: # (TODO: What are the right channels??)
 [//]: # (TODO: Identify what is needed from rhel-server-7-ose-beta-rpms and what will be AE's equivalent)
 
-* Configure yum / subscription manager as follows:
+1. Configure yum / subscription manager as follows:
+    ```
+    subscription-manager register --auto-attach
+    subscription-manager repos --disable="*"
+    subscription-manager repos \
+      --enable="rhel-7-server-rpms" \
+      --enable="rhel-7-server-extras-rpms" \
+      --enable="rhel-server-7-ose-beta-rpms"
+    ```
 
-        subscription-manager repos --disable="*"
-        subscription-manager repos \
-        --enable="rhel-7-server-rpms" \
-        --enable="rhel-7-server-extras-rpms" \
-        --enable="rhel-server-7-ose-beta-rpms"
+1. Install rpms missing from minimal we are likely to need.
+    ```
+    yum -y install deltarpm wget vim-enhanced net-tools bind-utils tmux git docker
+    ```
 
-    **Note:** You will have had to register/attach your system first.
+1. Install our atomic enterprise repo
+    ```
+    curl -o /etc/yum.repos.d/atomic-enterprise.repo http://mirror.ops.rhcloud.com/atomic/mirror/.atomic-enterprise-early-1/atomic-enterprise.repo
+    ```
 
-* Import the GPG key for beta:
+1. Make sure docker storage is configured correctly before starting docker!
 
-        rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-beta
+    See [APPENDIX - Docker Storage Setup](#appendix---docker-storage-setup)
 
-On **each** VM:
+1. To speed things up later you can grab docker images needed later (Optional)
 
-1. Install deltarpm to make package updates a little faster:
+    Make sure you completed the storage setup above first!  See [APPENDIX - Docker Storage Setup](#appendix---docker-storage-setup)
 
-        yum -y install deltarpm
-
-1. Install missing packages:
-
-        yum -y install wget vim-enhanced net-tools bind-utils tmux git
-
-1. And for the time being, use this internal repository to get the latest Atomic
-   Enterprise RPMs:
-
-        curl -o /etc/yum.repos.d/atomic-enterprise.repo http://10.8.55.81/repos/atomic-enterprise.repo
-
-1. Update:
-
-        yum -y update
-
-### Docker Storage Setup (optional, recommended)
-**IMPORTANT:** The default docker storage configuration uses loopback devices
-and is not appropriate for production. Red Hat considers the dm.thinpooldev
-storage option to be the only appropriate configuration for production use.
-
-If you want to configure the storage for Docker, you'll need to first install
-Docker, as the installer currently does not auto-configure this storage setup
-for you.
-
-    yum -y install docker
-
-Make sure that you are running at least `docker-1.6.2-6.el7.x86_64`.
-
-In order to use dm.thinpooldev you must have an LVM thinpool available, the
-`docker-storage-setup` package will assist you in configuring LVM. However you
-must provision your host to fit one of these three scenarios :
-
-*  Root filesystem on LVM with free space remaining on the volume group. Run
-`docker-storage-setup` with no additional configuration, it will allocate the
-remaining space for the thinpool.
-
-*  A dedicated LVM volume group where you'd like to create your thinpool
-
-        echo <<EOF > /etc/sysconfig/docker-storage-setup
-        VG=docker-vg
-        SETUP_LVM_THIN_POOL=yes
-        EOF
-        docker-storage-setup
-
-*  A dedicated block device, which will be used to create a volume group and thinpool
-
-        cat <<EOF > /etc/sysconfig/docker-storage-setup
-        DEVS=/dev/vdc
-        VG=docker-vg
-        SETUP_LVM_THIN_POOL=yes
-        EOF
-        docker-storage-setup
-
-Once complete you should have a thinpool named `docker-pool` and docker should
-be configured to use it in `/etc/sysconfig/docker-storage`.
-
-    # lvs
-    LV                  VG        Attr       LSize  Pool Origin Data%  Meta% Move Log Cpy%Sync Convert
-    docker-pool         docker-vg twi-a-tz-- 48.95g             0.00   0.44
-
-    # cat /etc/sysconfig/docker-storage
-    DOCKER_STORAGE_OPTIONS=--storage-opt dm.fs=xfs --storage-opt dm.thinpooldev=/dev/mapper/openshift--vg-docker--pool
-
-**Note:** If you had previously used docker with loopback storage you should
-clean out `/var/lib/docker` This is a destructive operation and will delete all
-images and containers on the host.
-
-    systemctl stop docker
-    rm -rf /var/lib/docker/*
+    ```
     systemctl start docker
-
-### Grab Docker Images (Optional, recommended)
-**If you want** to pre-fetch Docker images to make the first few things in your
-environment happen **faster**, you'll need to first install Docker if you didn't
-install it when (optionally) configuring the Docker storage previously.
-
-    yum -y install docker
-
-Make sure that you are running at least `docker-1.6.2-6.el7.x86_64`.
-
-You'll need to add `--insecure-registry 0.0.0.0/0` to your
-`/etc/sysconfig/docker` `OPTIONS`. Then:
-
-    systemctl start docker
-
-On all of your systems, grab the following docker images:
-
     docker pull registry.access.redhat.com/openshift3/ose-haproxy-router
     docker pull registry.access.redhat.com/openshift3/ose-deployer
     docker pull registry.access.redhat.com/openshift3/ose-pod
     docker pull registry.access.redhat.com/openshift3/ose-docker-registry
+    ```
+    It may be advisable to pull the following Docker images as well, since they are
+    used during the various labs:
+    ```
+    docker pull docker.io/atomicenterprise/hello-atomic
+    ```
 
-It may be advisable to pull the following Docker images as well, since they are
-used during the various labs:
+### Preparing The Master VM
 
-    docker pull atomicenterprise/hello-atomic
+On the **master** node perform the following operations
 
-**Note:** If you built your VM for a previous beta version and at some point
-used an older version of Docker, you need to *reinstall* or *remove+install*
-Docker after removing `/etc/sysconfig/docker`. The options in the config file
-changed and RPM will not overwrite your existing file if you just do a "yum
-update".
+1. Install EPEL repo and then ansible
 
-    yum -y remove docker
-    rm /etc/sysconfig/docker*
-    yum -y install docker
+    ```
+    yum -y install http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
+    sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo
+    yum -y --enablerepo=epel install ansible
+    ```
 
-### Clone the Training Repository
-On your master, it makes sense to clone the training git repository:
+1. Clone the Atomic Enterprise Ansible repo:
 
-    cd
-    git clone https://github.com/projectatomic/atomic-enterprise-training.git training
+    ```
+    cd /root
+    git clone https://github.com/projectatomic/atomic-enterprise-ansible.git
+    ```
 
-**REMINDER**
-Almost all of the files for this training are in the training folder you just
-cloned.
+1.  Make sure (root) has an ssh key pair
 
-### Add Development Users
-In the "real world" your developers would likely be using the AE tools on
-their own machines (e.g. `oc`). For the Early Access training, we
-will create user accounts for two non-privileged users of AE, *joe* and
-*alice*, on the master. This is done for convenience and because we'll be using
-`htpasswd` for authentication.
+    ```
+    ssh-keygen # generally defaults are good
+    ```
 
-    useradd joe
-    useradd alice
+1. Copy the ssh public key to **all** nodes in the cluster
 
-We will come back to these users later. Remember to do this on the `master`
-system, and not the nodes.
+    ```
+    for node in ae-master.example.com ae-node1.example.com ae-node2.example.com; do
+        ssh-copy-id ${node}
+    done
+    ```
+    Remember to replace the hostnames with your hostnames
+
+1. Edit the byo (bring your own) inventory file to include your hosts
+    ```
+    cd /root/atomic-enterprise-ansible
+    vi inventory/byo/hosts
+    ```
+    - \[masters\] section should contain only ae-master.example.com (or your hostname)
+    - \[nodes\] section should contain all of your nodes.
+    - For now do not worry much about the information after openshift_node_labels=. But do no omit it entirely.
+
+### Run the installer (on the master VM)
+
+1. Run ansible to set up the cluster
+    ```
+    ansible-playbook -i inventory/byo/hosts playbooks/byo/config.yml
+    ```
+
+1. Do not move along unless this worked! Success looks (something) like this:
+
+    ```
+    -------------------------------------------------------------------------------
+    PLAY RECAP ********************************************************************
+    ae-master.example.com      : ok=95   changed=42   unreachable=0    failed=0
+    ae-node1.example.com       : ok=18   changed=22   unreachable=0    failed=0
+    ae-node2.example.com       : ok=18   changed=22   unreachable=0    failed=0
+    localhost                  : ok=5    changed=0    unreachable=0    failed=0
+    -------------------------------------------------------------------------------
+    ```
+
+1. Run oc get nodes (your cluster should be running!)
+    ```
+    oc get nodes
+    ```
+
+    You should see something like:
+    ```
+    -----------------------------------------------------------------------------
+    NAME                    LABELS                                         STATUS
+    ae-master.example.com   kubernetes.io/hostname=ae-master.example.com   Ready
+    ae-node1.example.com    kubernetes.io/hostname=ae-node1.example.com    Ready
+    ae-node1.example.com    kubernetes.io/hostname=ae-node1.example.com    Ready
+    -----------------------------------------------------------------------------
+    ```
 
 [//]: # (TODO: check that ansible installer will be ready)
-
-## Ansible-based Installer
-The installer uses Ansible. Eventually there will be an interactive text-based
-CLI installer that leverages Ansible under the covers. For now, we have to
-invoke Ansible manually.
-
-### Install Ansible
-Ansible currently comes from the EPEL repository.
-
-Install EPEL:
-
-    yum -y install \
-    http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
-
-Disable EPEL so that it is not accidentally used later:
-
-    sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo
-
-Install the packages for Ansible:
-
-    yum -y --enablerepo=epel install ansible
-
-### Generate SSH Keys
-Because of the way Ansible works, SSH key distribution is required. First,
-generate an SSH key on your master, where we will run Ansible:
-
-    ssh-keygen
-
-Do *not* use a password.
-
-### Distribute SSH Keys
-An easy way to distribute your SSH keys is by using a `bash` loop:
-
-    for host in ae-master.example.com ae-node1.example.com \
-    ae-node2.example.com; do ssh-copy-id -i ~/.ssh/id_rsa.pub \
-    $host; done
-
-Remember, if your FQDNs are different, you would have to modify the loop
-accordingly.
-
-### Clone the Ansible Repository
-The configuration files for the Ansible installer are currently available on
-Github. Clone the repository:
-
-    cd
-    git clone https://github.com/projectatomic/atomic-enterprise-ansible.git
-    cd ~/atomic-enterprise-ansible
-
-### Configure Ansible
-Copy the staged Ansible configuration files to `/etc/ansible`:
-
-    /bin/cp -r ~/training/eap-latest/ansible/* /etc/ansible/
-
-### Modify Hosts
-If you are not using the "example.com" domain and the training example
-hostnames, modify `/etc/ansible/hosts` accordingly.
-
-Also, if you are using multiple NICs and will be trying to direct various
-traffic to different places, you will need to take a look at [Generic Cloud
-Install](#generic-cloud-install) to learn more about the syntax of Ansible's
-`hosts` file.
-
-### Run the Ansible Installer
-Now we can simply run the Ansible installer:
-
-    ansible-playbook ~/atomic-enterprise-ansible/playbooks/byo/config.yml
-
-If you looked at the Ansible hosts file, note that our master
-(ae-master.example.com) was present in both the `master` and the `node`
-section.
-
-Effectively, Ansible is going to install and configure node software on all the
-nodes and master software just on `ae-master.example.com`.
 
 ### Add Cloud Domain
 
@@ -449,17 +328,85 @@ you should edit `/etc/sysconfig/atomic-enterprise-master` and add the following:
 
 Or modify it appropriately for your domain.
 
+## Launch your very first pod
+
+We will launch a pod, see that it starts and then delete it. More about pods,
+services, scheduling, authentication and all sorts of other information follows.
+
+1. Clone the atomic-enterprise-training repository, to the master. This repository
+   has materials used later in later exercises
+   ```
+   git clone git clone https://github.com/projectatomic/atomic-enterprise-training.git /root/training
+   ```
+
+1. Launch your first pod
+    ```
+    oc create -f /root/training/eap-latest/hello-pod.json
+    ```
+
+1. Verify the pod started
+    ```
+    oc get pods
+    ```
+
+    While it’s starting, you should see:
+    ```
+    --------------------------------------------------
+    NAME           READY     REASON    RESTARTS   AGE
+    hello-atomic   0/1       Pending   0          4s
+    --------------------------------------------------
+    ```
+    Keep running “oc get pods” until the pod is in state “Running”, this can take roughly a minute and involves downloading a docker image so time can vary depending on network speed:
+    ```
+    --------------------------------------------------
+    NAME           READY     REASON    RESTARTS   AGE
+    hello-atomic   1/1       Running   0          1m
+    --------------------------------------------------
+    ```
+
+1. Get extended information about the pod
+    ```
+    oc describe pods hello-atomic
+    ```
+    The output should look something like:
+
+    [NOTE]
+    Take notice of the IP field below:
+    ```
+    ----------------------------------------------------------------
+    Name:                    hello-atomic
+    Image(s):                atomicenterprise/hello-atomic:latest
+    Host:                    ae-master.example.com/192.168.122.154
+    Labels:                  name=hello-atomic
+    Status:                  Running
+    IP:                      10.1.0.2
+    Replication Controllers: <none>
+    ...
+    ----------------------------------------------------------------
+    ```
+
+1. Access new pod
+    ```
+    curl http://$IP_FROM_ABOVE:8080/
+    ```
+
+1. Delete the new pod
+    ```
+    oc delete pod hello-atomic
+    ```
+
+## Regions and Zones
+
 There was also some information about "regions" and "zones" in the hosts file.
 Let's talk about those concepts now.
 
-## Regions and Zones
 If you think you're about to learn how to configure regions and zones in
 Atomic Enterprise, you're only partially correct.
 
 In OpenShift 2, we introduced the specific concepts of "regions" and "zones" to
 enable organizations to provide some topologies for application resiliency. Apps
 would be spread throughout the zones in a region and, depending on the way you
-configured AE, you could make different regions accessible to users.
+configured OpenShift, you could make different regions accessible to users.
 
 The reason that you're only "partially" correct in your assumption is that, for
 OpenShift 3 and Atomic Enterprise, Kubernetes doesn't actually care about your
@@ -489,7 +436,8 @@ and you won't find this in a file):
         {"name" : "HostName"},
         {"name" : "PodFitsPorts"},
         {"name" : "NoDiskConflict"}
-      ],"priorities" : [
+      ],
+      "priorities" : [
         {"name" : "LeastRequestedPriority", "weight" : 1},
         {"name" : "ServiceSpreadingPriority", "weight" : 1}
       ]
@@ -573,7 +521,8 @@ following content:
         {"name" : "PodFitsPorts"},
         {"name" : "NoDiskConflict"},
         {"name" : "Region", "argument" : {"serviceAffinity" : { "labels" : ["region"]}}}
-      ],"priorities" : [
+      ],
+      "priorities" : [
         {"name" : "LeastRequestedPriority", "weight" : 1},
         {"name" : "ServiceSpreadingPriority", "weight" : 1},
         {"name" : "Zone", "weight" : 2, "argument" : {"serviceAntiAffinity" : { "label" : "zone" }}}
@@ -660,6 +609,15 @@ Aggregation](#appendix---infrastructure-log-aggregation)
 Atomic Enterprise supports a number of mechanisms for authentication. The simplest
 use case for our testing purposes is `htpasswd`-based authentication.
 
+In the "real world" your developers would likely be using the AE tools on
+their own machines (e.g. `oc`). For the Early Access training, we
+will create user accounts for two non-privileged users of AE, *joe* and
+*alice*, on the **master**. This is done for convenience and because we'll be using
+`htpasswd` for authentication.
+
+    useradd joe
+    useradd alice
+
 To start, we will need the `htpasswd` binary, which is made available by
 installing:
 
@@ -670,8 +628,6 @@ From there, we can create a password for our users, Joe and Alice:
     touch /etc/openshift/openshift-passwd
     htpasswd -b /etc/openshift/openshift-passwd joe redhat
     htpasswd -b /etc/openshift/openshift-passwd alice redhat
-
-Remember, you created these users previously.
 
 [//]: # (TODO: fix the /etc/openshift/master.yaml path)
 
@@ -2156,6 +2112,60 @@ is now fully functional!
 ## Conclusion
 This concludes the Early Access Program training. Look for more example
 applications to come!
+
+# APPENDIX - Docker Storage Setup
+**IMPORTANT:** The default docker storage configuration uses loopback devices
+and is not appropriate for production. Red Hat considers the dm.thinpooldev
+storage option to be the only appropriate configuration for production use.
+
+To configure the storage for Docker, you'll need to first install Docker.
+```
+yum -y install docker
+```
+
+In order to use dm.thinpooldev you must have an LVM thinpool available, the
+[docker-storage-setup](https://github.com/projectatomic/docker-storage-setup/)
+package will assist you in configuring LVM. However you must provision your
+host to fit one of these three scenarios :
+
+*  Root filesystem on LVM with free space remaining on the volume group. Run
+`docker-storage-setup` with no additional configuration, it will allocate the
+remaining space for the thinpool.
+
+*  A dedicated LVM volume group where you'd like to create your thinpool
+
+        echo <<EOF > /etc/sysconfig/docker-storage-setup
+        VG=docker-vg
+        SETUP_LVM_THIN_POOL=yes
+        EOF
+        docker-storage-setup
+
+*  A dedicated block device, which will be used to create a volume group and thinpool
+
+        cat <<EOF > /etc/sysconfig/docker-storage-setup
+        DEVS=/dev/vdc
+        VG=docker-vg
+        SETUP_LVM_THIN_POOL=yes
+        EOF
+        docker-storage-setup
+
+Once complete you should have a thinpool named `docker-pool` and docker should
+be configured to use it in `/etc/sysconfig/docker-storage`.
+
+    # lvs
+    LV                  VG        Attr       LSize  Pool Origin Data%  Meta% Move Log Cpy%Sync Convert
+    docker-pool         docker-vg twi-a-tz-- 48.95g             0.00   0.44
+
+    # cat /etc/sysconfig/docker-storage
+    DOCKER_STORAGE_OPTIONS=--storage-opt dm.fs=xfs --storage-opt dm.thinpooldev=/dev/mapper/openshift--vg-docker--pool
+
+**Note:** If you had previously used docker with loopback storage you should
+clean out `/var/lib/docker` This is a destructive operation and will delete all
+images and containers on the host.
+
+    systemctl stop docker
+    rm -rf /var/lib/docker/*
+    systemctl start docker
 
 # APPENDIX - DNSMasq setup
 [dnsmasq.conf](./eap-latest/dnsmasq.conf) file and a sample [hosts](./eap-latest/hosts)
