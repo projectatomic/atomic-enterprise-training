@@ -222,7 +222,8 @@ should:
 
 1. To speed things up later you can grab docker images needed later (Optional)
 
-    Make sure you completed the storage setup above first!  See [APPENDIX - Docker Storage Setup](#appendix---docker-storage-setup)
+    Make sure you completed the storage setup first! See [APPENDIX - Docker
+    Storage Setup](#appendix---docker-storage-setup)
 
     ```
     systemctl start docker
@@ -272,13 +273,27 @@ On the **master** node perform the following operations
     Remember to replace the hostnames with your hostnames
 
 1. Edit the byo (bring your own) inventory file to include your hosts
+
     ```
     cd /root/atomic-enterprise-ansible
     vi inventory/byo/hosts
     ```
-    - \[masters\] section should contain only ae-master.example.com (or your hostname)
-    - \[nodes\] section should contain all of your nodes.
-    - For now do not worry much about the information after openshift_node_labels=. But do no omit it entirely.
+
+    Replace `[masters]` and `[nodes]` sections with following content or modify
+    them according to your DNS environment.
+
+    ```
+    [masters]
+    ae-master.example.com
+
+    [nodes]
+    ae-master.example.com openshift_node_labels="{'region': 'infra', 'zone': 'default'}"
+    ae-node1.example.com openshift_node_labels="{'region': 'primary', 'zone': 'east'}"
+    ae-node2.example.com openshift_node_labels="{'region': 'primary', 'zone': 'west'}"
+    ```
+
+    - For now do not worry much about the information after
+      `openshift_node_labels=`. But do no omit it entirely.
 
 ### Run the installer (on the master VM)
 
@@ -336,7 +351,7 @@ services, scheduling, authentication and all sorts of other information follows.
 1. Clone the atomic-enterprise-training repository, to the master. This repository
    has materials used later in later exercises
    ```
-   git clone git clone https://github.com/projectatomic/atomic-enterprise-training.git /root/training
+   git clone https://github.com/projectatomic/atomic-enterprise-training.git /root/training
    ```
 
 1. Launch your first pod
@@ -349,14 +364,16 @@ services, scheduling, authentication and all sorts of other information follows.
     oc get pods
     ```
 
-    While it’s starting, you should see:
+    While it's starting, you should see:
     ```
     --------------------------------------------------
     NAME           READY     REASON    RESTARTS   AGE
     hello-atomic   0/1       Pending   0          4s
     --------------------------------------------------
     ```
-    Keep running “oc get pods” until the pod is in state “Running”, this can take roughly a minute and involves downloading a docker image so time can vary depending on network speed:
+    Keep running `oc get pods` until the pod is in state `Running`, this can
+    take roughly a minute and involves downloading a docker image so time can
+    vary depending on network speed:
     ```
     --------------------------------------------------
     NAME           READY     REASON    RESTARTS   AGE
@@ -370,8 +387,7 @@ services, scheduling, authentication and all sorts of other information follows.
     ```
     The output should look something like:
 
-    [NOTE]
-    Take notice of the IP field below:
+    **Note:** Take notice of the IP field below:
     ```
     ----------------------------------------------------------------
     Name:                    hello-atomic
