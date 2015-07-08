@@ -70,7 +70,6 @@
     - [Verifying DNSMasq](#verifying-dnsmasq)
 - [APPENDIX - Import/Export of Docker Images (Disconnected Use)](#appendix---importexport-of-docker-images-disconnected-use)
 - [APPENDIX - Cleaning Up](#appendix---cleaning-up)
-- [APPENDIX - Pretty Output](#appendix---pretty-output)
 - [APPENDIX - Troubleshooting](#appendix---troubleshooting)
 - [APPENDIX - Infrastructure Log Aggregation](#appendix---infrastructure-log-aggregation)
   - [Enable Remote Logging on Master](#enable-remote-logging-on-master)
@@ -936,15 +935,30 @@ the pod inside of it. The command should display the ID of the pod:
 
     pods/hello-atomic
 
-Issue a `get pods` to see the details of how it was defined:
+Issue a `get pods` to see overview of what was defined:
 
     oc get pods
-    POD            IP         CONTAINER(S)   IMAGE(S)                                 HOST                                 LABELS              STATUS    CREATED      MESSAGE
-    hello-atomic   10.1.1.2                                                           ae-node1.example.com/192.168.133.3   name=hello-atomic   Running   16 seconds
-                              hello-atomic   atomicenterprise/hello-atomic:v0.5.2.2                                                            Running   2 seconds
+    NAME           READY     REASON    RESTARTS   AGE
+    hello-atomic   1/1       Running   0          7s
 
-The output of this command shows all of the Docker containers in a pod, which
-explains some of the spacing.
+You may want to know more about the `hello-atomic` pod:
+
+    oc describe pod hello-atomic
+    Name:                           hello-atomic
+    Image(s):                       atomicenterprise/hello-atomic:v0.5.2.2
+    Host:                           os-node2.example.com/192.168.133.4
+    Labels:                         name=hello-atomic
+    Status:                         Running
+    IP:                             10.1.1.5
+    Replication Controllers:        <none>
+    Containers:
+      hello-atomic:
+        Image:              atomicenterprise/hello-atomic:v0.5.2.2
+        State:              Running
+          Started:          Wed, 08 Jul 2015 17:27:33 +0200
+        Ready:              True
+        Restart Count:      0
+    ...
 
 [//]: # (TODO: openshift3/ -> ???)
 
@@ -1209,17 +1223,12 @@ Let's check the pods:
 
     oc get pods
 
-In the output, you should see the router pod status change to "running" after a
+In the output, you should see the router READY state change to `1/1` after a
 few moments (it may take up to a few minutes):
 
-    POD              IP         CONTAINER(S)   IMAGE(S)                                                                 HOST                                  LABELS                                                      STATUS    CREATED      MESSAGE
-    router-1-cutck   10.1.0.4                                                                                           ae-master.example.com/192.168.133.2   deployment=router-1,deploymentconfig=router,router=router   Running   18 minutes   
-                                router         registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.5.2.2                                                                                                     Running   18 minutes
-
-Note: This output is huge, wide, and ugly. We're working on making it nicer. You
-can chime in here:
-
-    https://github.com/GoogleCloudPlatform/kubernetes/issues/7843
+    oc get pods
+    NAME              READY     REASON    RESTARTS   AGE
+    router-1-deploy   1/1       Running   0          21s
 
 In the above router creation command (`oadm router...`) we also specified
 `--selector`. This flag causes a `nodeSelector` to be placed on all of the pods
@@ -1590,12 +1599,9 @@ anything), so she is automatically configured to look at the `demo` project
 since she has access to it. She has "view" access, so `oc status` and `oc get
 pods` and so forth should show her the same thing as `joe`:
 
-[//]: # (TODO: fix image names)
-
     [alice]$ oc get pods
-    POD            IP         CONTAINER(S)   IMAGE(S)                                 HOST                                 LABELS              STATUS    CREATED      MESSAGE
-    hello-atomic   10.1.1.2                                                           ae-node1.example.com/192.168.133.3   name=hello-atomic   Running   14 minutes
-                              hello-atomic   atomicenterprise/hello-atomic:v0.5.2.2                                                            Running   14 minutes
+    NAME           READY     REASON    RESTARTS   AGE
+    hello-atomic   1/1       Running   0          4s
 
 However, she cannot make changes:
 
@@ -2291,12 +2297,6 @@ master-admin to find everything:
 Deleting a project with `oc delete project` should delete all of its resources,
 but you may need help finding things in the default project (where
 infrastructure items are). Deleting the default project is not recommended.
-
-# APPENDIX - Pretty Output
-If the output of `oc get pods` is a little too busy, you can use the following
-to limit some of what it returns:
-
-    oc get pods | awk '{print $1"\t"$3"\t"$5"\t"$7"\n"}' | column -t
 
 # APPENDIX - Troubleshooting
 
