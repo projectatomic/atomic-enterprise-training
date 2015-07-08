@@ -402,6 +402,7 @@ services, scheduling, authentication and all sorts of other information follows.
 
 1. Access new pod
     ```
+    # execute this on the node which hosts the pod (Host:)
     curl http://$IP_FROM_ABOVE:8080/
     ```
 
@@ -1431,8 +1432,6 @@ portion of `test-complete.json` to match your DNS environment.
 
 You should see something like the following:
 
-[//]: # (TODO: check the name of imageStream)
-
     services/hello-atomic-service
     routes/hello-atomic-route
     pods/hello-atomic
@@ -1478,10 +1477,8 @@ We can see that the service has been defined based on the JSON we used earlier.
 If the output of `oc get pods` shows that our pod is running, we can try to
 access the service:
 
-[//]: # (TODO: fix the text "Hello OpenShift" after fixing the image)
-
     curl `oc get services | grep hello-atomic | awk '{print $4":"$5}' | sed -e 's/\/.*//'`
-    Hello OpenShift!
+    Hello Atomic!
 
 This is a good sign! It means that, if the router is working, we should be able
 to access the service via the route.
@@ -1540,11 +1537,11 @@ Go ahead and `exit` from the container.
 
 You can reach the route securely and check that it is using the right certificate:
 
-[//]: # (TODO: fix the text and cacert path)
+[//]: # (TODO: fix cacert path)
 
     curl --cacert /etc/openshift/master/ca.crt \
              https://hello-atomic.cloudapps.example.com
-    Hello OpenShift!
+    Hello Atomic!
 
 And:
 
