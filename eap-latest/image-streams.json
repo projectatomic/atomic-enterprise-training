@@ -1,20 +1,20 @@
 {
-  "apiVersion": "v1beta1",
+  "apiVersion": "v1",
   "kind": "ImageStreamList",
   "items": [
     {
-      "apiVersion": "v1beta1",
+      "apiVersion": "v1",
       "kind": "ImageStream",
       "metadata": {
         "name": "mysql"
       },
       "spec": {
-        "dockerImageRepository": "registry.access.redhat.com/openshift3_beta/mysql-55-rhel7"
+        "dockerImageRepository": "registry.access.redhat.com/openshift3/mysql-55-rhel7"
       }
     },
     {
       "kind": "ImageStream",
-      "apiVersion": "v1beta3",
+      "apiVersion": "v1",
       "metadata": {
         "name" : "ruby-hello-world",
         "creationTimestamp": null
