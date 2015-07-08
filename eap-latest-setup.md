@@ -946,22 +946,22 @@ Issue a `get pods` to see the details of how it was defined:
 The output of this command shows all of the Docker containers in a pod, which
 explains some of the spacing.
 
-[//]: # (TODO: openshift3_beta/ -> ???)
+[//]: # (TODO: openshift3/ -> ???)
 
 On the node where the pod is running (`HOST`), look at the list of Docker
 containers with `docker ps` (in a `root` terminal) to see the bound ports.  We
-should see an `openshift3_beta/ose-pod` container bound to 36061 on the host and
+should see an `openshift3/ose-pod` container bound to 36061 on the host and
 bound to 8080 on the container, along with several other `ose-pod` containers.
 
 [//]: # (TODO: correct names, images and container IDs)
 
-    CONTAINER ID   IMAGE                                    COMMAND           CREATED         STATUS         PORTS                    NAMES
-    ded86f750698   atomicenterprise/hello-atomic:v0.5.2.2   "/hello-atomic"   7 minutes ago   Up 7 minutes                            k8s_hello-atomic.b69b23ff_hello-atomic_demo_522adf06-0f83-11e5-982b-525400a4dc47_f491f4be
-    405d63115a60   openshift3_beta/ose-pod:v0.5.2.2         "/pod"            7 minutes ago   Up 7 minutes   0.0.0.0:6061->8080/tcp   k8s_POD.ad86e772_hello-atomic_demo_522adf06-0f83-11e5-982b-525400a4dc47_6cc974dc
+    CONTAINER ID   IMAGE                                    COMMAND           CREATED         STATUS         PORTS                     NAMES
+    ded86f750698   atomicenterprise/hello-atomic:v0.5.2.2   "/hello-atomic"   7 minutes ago   Up 7 minutes                             k8s_hello-atomic.b69b23ff_hello-atomic_demo_522adf06-0f83-11e5-982b-525400a4dc47_f491f4be
+    405d63115a60   openshift3/ose-pod:latest                "/pod"            7 minutes ago   Up 7 minutes   0.0.0.0:36061->8080/tcp   k8s_POD.ad86e772_hello-atomic_demo_522adf06-0f83-11e5-982b-525400a4dc47_6cc974dc
 
-[//]: # (TODO: openshift3_beta/ -> ???)
+[//]: # (TODO: openshift3/ -> ???)
 
-The `openshift3_beta/ose-pod` container exists because of the way network
+The `openshift3/ose-pod` container exists because of the way network
 namespacing works in Kubernetes. For the sake of simplicity, think of the
 container as nothing more than a way for the host OS to get an interface created
 for the corresponding pod to be able to receive traffic. Deeper understanding of
@@ -1072,11 +1072,11 @@ and that is where the routing tier comes in.
 
 ## Routing
 
-[//]: # (TODO: correct openshift3_beta/)
+[//]: # (TODO: correct openshift3/)
 
 The AE routing tier is how FQDN-destined traffic enters the Atomic
 environment so that it can ultimately reach pods. In a simplification of the
-process, the `openshift3_beta/ose-haproxy-router` container we will create below
+process, the `openshift3/ose-haproxy-router` container we will create below
 is a pre-configured instance of HAProxy as well as some of the AE
 framework. The Atomic instance running in this container watches for route
 resources on the Atomic master.
@@ -1160,9 +1160,9 @@ services. It currently supports only HTTP(S) traffic (and "any"
 TLS-enabled traffic via SNI). While it is called a "router", it is essentially a
 proxy.
 
-[//]: # (TODO: rename openshift3_beta/)
+[//]: # (TODO: rename openshift3/)
 
-The `openshift3_beta/ose-haproxy-router` container listens on the host network
+The `openshift3/ose-haproxy-router` container listens on the host network
 interface unlike most containers that listen only on private IPs. The router
 proxies external requests for route names to the IPs of actual pods identified
 by the service associated with the route.
@@ -1190,12 +1190,12 @@ router image (the tooling defaults to upstream/origin otherwise) and we need
 to supply the wildcard cert/key that we created for the cloud domain.
 
 [//]: # (TODO: /var/lib/openshift/openshift.local.certificates/openshift-router)
-[//]: # (TODO: registry.access.redhat.com/openshift3_beta/ose-${component}:${version})
+[//]: # (TODO: registry.access.redhat.com/openshift3/ose-${component}:latest)
 
     oadm router --default-cert=cloudapps.router.pem \
     --credentials=/etc/openshift/master/openshift-router.kubeconfig \
     --selector='region=infra' \
-    --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
+    --images='registry.access.redhat.com/openshift3/ose-${component}:latest'
 
 If this works, you'll see some output:
 
@@ -1693,7 +1693,7 @@ registry. As the `root` user, run the following:
 
     oadm registry --create \
     --credentials=/etc/openshift/master/openshift-registry.kubeconfig \
-    --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}' \
+    --images='registry.access.redhat.com/openshift3/ose-${component}:latest' \
     --selector="region=infra" --mount-host=/mnt/registry
 
 You'll get output like:
@@ -1711,7 +1711,7 @@ as root:
     In project default
 
     service docker-registry (172.30.53.223:5000)
-      docker-registry deploys registry.access.redhat.com/openshift3_beta/ose-docker-registry:v0.5.2.2
+      docker-registry deploys registry.access.redhat.com/openshift3/ose-docker-registry:latest
         #1 deployed 4 hours ago - 1 pod
 
     service kubernetes (172.30.0.2:443)
@@ -1719,7 +1719,7 @@ as root:
     service kubernetes-ro (172.30.0.1:80)
 
     service router (172.30.74.178:80)
-      router deploys registry.access.redhat.com/openshift3_beta/ose-haproxy-router:v0.5.2.2
+      router deploys registry.access.redhat.com/openshift3/ose-haproxy-router:latest
         #1 deployed 7 minutes ago - 1 pod
 
 The project we have been working in when using the `root` user is called
@@ -1934,8 +1934,8 @@ Let's inspect them:
 
 After several seconds, you'll see:
 
-    NAME               DOCKER REPO                                                 TAGS                       UPDATED
-    mysql              registry.access.redhat.com/openshift3_beta/mysql-55-rhel7   latest,v0.4.3.2,v0.5.2.2   5 minutes ago
+    NAME               DOCKER REPO                                            TAGS                       UPDATED
+    mysql              registry.access.redhat.com/openshift3/mysql-55-rhel7   latest,v0.4.3.2,v0.5.2.2   5 minutes ago
     ruby-hello-world   172.30.53.223:5000/openshift/ruby-hello-world
 
 Note that no tags are available for `ruby-hello-world`. Why? You haven't pushed
@@ -1946,9 +1946,9 @@ it yet:
 Once pushed, tags will be updated automatically:
 
     oc get is -n openshift
-    NAME               DOCKER REPO                                                 TAGS                       UPDATED
-    mysql              registry.access.redhat.com/openshift3_beta/mysql-55-rhel7   latest,v0.4.3.2,v0.5.2.2   6 minutes ago
-    ruby-hello-world   172.30.53.223:5000/openshift/ruby-hello-world               latest                     5 seconds ago
+    NAME               DOCKER REPO                                            TAGS                       UPDATED
+    mysql              registry.access.redhat.com/openshift3/mysql-55-rhel7   latest,v0.4.3.2,v0.5.2.2   6 minutes ago
+    ruby-hello-world   172.30.53.223:5000/openshift/ruby-hello-world          latest                     5 seconds ago
 
 The image is now accessible from all the nodes via `openshift/ruby-hello-world`
 image stream. And we can finally proceed to frontend's deployment.
@@ -2262,10 +2262,10 @@ This will fetch all of the images. You can then save them to a tarball:
 [//]: # (TODO: change image names?)
 
     docker save -o beta4-images.tar \
-    registry.access.redhat.com/openshift3_beta/ose-haproxy-router \
-    registry.access.redhat.com/openshift3_beta/ose-deployer \
-    registry.access.redhat.com/openshift3_beta/ose-pod \
-    registry.access.redhat.com/openshift3_beta/ose-docker-registry \
+    registry.access.redhat.com/openshift3/ose-haproxy-router \
+    registry.access.redhat.com/openshift3/ose-deployer \
+    registry.access.redhat.com/openshift3/ose-pod \
+    registry.access.redhat.com/openshift3/ose-docker-registry \
     atomicenterprise/hello-atomic
 
 **Note: On an SSD-equipped system this took ~2 min and uses 1.8GB of disk
