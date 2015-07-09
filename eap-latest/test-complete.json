@@ -1,13 +1,13 @@
 {
-  "kind": "Config",
-  "apiVersion": "v1beta3",
+  "kind": "List",
+  "apiVersion": "v1",
   "metadata": {
     "name": "hello-service-complete-example"
   },
   "items": [
     {
       "kind": "Service",
-      "apiVersion": "v1beta3",
+      "apiVersion": "v1",
       "metadata": {
         "name": "hello-atomic-service"
       },
@@ -26,7 +26,7 @@
     },
     {
       "kind": "Route",
-      "apiVersion": "v1beta3",
+      "apiVersion": "v1",
       "metadata": {
         "name": "hello-atomic-route"
       },
@@ -42,7 +42,7 @@
     },
     {
       "kind": "DeploymentConfig",
-      "apiVersion": "v1beta3",
+      "apiVersion": "v1",
       "metadata": {
         "name": "hello-atomic"
       },
@@ -71,7 +71,7 @@
             "containers": [
               {
                 "name": "hello-atomic",
-                "image": "openshift/hello-openshift:v0.4.3",
+                "image": "atomicenterprise/hello-atomic",
                 "ports": [
                   {
                     "name": "hello-atomic-tcp-8080",
