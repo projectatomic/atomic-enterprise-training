@@ -328,7 +328,17 @@ On the **master** node perform the following operations
     -----------------------------------------------------------------------------
     ```
 
-[//]: # (TODO: check that ansible installer will be ready)
+[//]: # (TODO: remove this once the issue is resolved and update above `get nodes` output)
+
+1. There's a [bug](https://github.com/openshift/openshift-ansible/issues/305)
+   in current ansible installer preventing labels to be set. For now, let's set
+   them manually:
+    ```
+    oc label nodes ae-master.example.com region=infra zone=default
+    oc label nodes ae-node1.example.com  region=primary zone=east
+    oc label nodes ae-node2.example.com  region=primary zone=west
+    ```
+    You should see them assigned in the output of the next `oc get nodes`.
 
 ### Add Cloud Domain
 
