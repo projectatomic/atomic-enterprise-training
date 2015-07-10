@@ -2163,7 +2163,7 @@ remaining space for the thinpool.
 
 *  A dedicated LVM volume group where you'd like to create your thinpool
 
-        echo <<EOF > /etc/sysconfig/docker-storage-setup
+        cat <<EOF > /etc/sysconfig/docker-storage-setup
         VG=docker-vg
         SETUP_LVM_THIN_POOL=yes
         EOF
