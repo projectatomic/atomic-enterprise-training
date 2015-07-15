@@ -202,7 +202,7 @@ should:
     subscription-manager repos \
       --enable="rhel-7-server-rpms" \
       --enable="rhel-7-server-extras-rpms" \
-      --enable="rhel-server-7-ose-beta-rpms"
+      --enable="rhel-7-server-ose-3.0-rpms"
     ```
 
 1. Install rpms missing from minimal we are likely to need.
@@ -244,7 +244,7 @@ On the **master** node perform the following operations
 1. Install EPEL repo and then ansible
 
     ```
-    yum -y install http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
+    yum -y install http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo
     yum -y --enablerepo=epel install ansible
     ```
@@ -1802,8 +1802,8 @@ also makes use of auto-generated parameters and other neat features of Atomic
 Enterprise.
 
 [OpenShift Enterprise](https://docs.openshift.com/enterprise/3.0/welcome/index.html)
-provides [Source-to-image (S2I)
-framework](https://docs.openshift.com/enterprise/3.0/creating_images/sti.html)
+provides a [Source-to-Image (S2I)
+framework](https://docs.openshift.com/enterprise/3.0/creating_images/s2i.html)
 which makes it easy to produce an image from an application source code and
 store it in local registry service. In Atomic Enterprise, we have to do the
 crude work ourselves.
