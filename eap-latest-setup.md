@@ -1802,8 +1802,8 @@ also makes use of auto-generated parameters and other neat features of Atomic
 Enterprise.
 
 [OpenShift Enterprise](https://docs.openshift.com/enterprise/3.0/welcome/index.html)
-provides [Source-to-image (S2I)
-framework](https://docs.openshift.com/enterprise/3.0/creating_images/sti.html)
+provides a [Source-to-Image (S2I)
+framework](https://docs.openshift.com/enterprise/3.0/creating_images/s2i.html)
 which makes it easy to produce an image from an application source code and
 store it in local registry service. In Atomic Enterprise, we have to do the
 crude work ourselves.
