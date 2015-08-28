@@ -366,10 +366,11 @@ master node (or you could choose to use a separate server).
     NAME                    LABELS                                         STATUS
     ae-master.example.com   kubernetes.io/hostname=ae-master.example.com   Ready
     ae-node1.example.com    kubernetes.io/hostname=ae-node1.example.com    Ready
-    ae-node1.example.com    kubernetes.io/hostname=ae-node1.example.com    Ready
+    ae-node2.example.com    kubernetes.io/hostname=ae-node2.example.com    Ready
     -----------------------------------------------------------------------------
     ```
 
+<!--
 [//]: # (TODO: remove this once the issue is resolved and update above `get nodes` output)
 
 1. There's a [bug](https://github.com/openshift/openshift-ansible/issues/305)
@@ -381,28 +382,23 @@ master node (or you could choose to use a separate server).
     oc label nodes ae-node2.example.com  region=primary zone=west
     ```
     You should see them assigned in the output of the next `oc get nodes`.
-
-### Add Cloud Domain
-
-If you want default routes (we'll talk about these later) to automatically get
-the right domain (the one you configured earlier with your wildcard DNS), then
-you should edit `/etc/sysconfig/atomic-enterprise-master` and add the following:
-
-[//]: # (TODO: OPENSHIFT_ROUTE_SUBDOMAIN -> ???)
-
-    OPENSHIFT_ROUTE_SUBDOMAIN=cloudapps.example.com
-
-Or modify it appropriately for your domain.
+-->
 
 ## Launch your very first pod
 
 We will launch a pod, see that it starts and then delete it. More about pods,
 services, scheduling, authentication and all sorts of other information follows.
 
-1. Clone the atomic-enterprise-training repository, to the master. This repository
-   has materials used later in later exercises
+1. Clone the atomic-enterprise-training repository.
+
+   You should perform this operation on the **master** host as root, which
+   will automatically have the credentials to access the cluster.
+
+   This repository has materials used later in later exercises; we
+   call the directory `training` for short.
+
    ```
-   git clone https://github.com/projectatomic/atomic-enterprise-training.git /root/training
+   git clone https://github.com/projectatomic/atomic-enterprise-training.git training
    ```
 
 1. Launch your first pod
