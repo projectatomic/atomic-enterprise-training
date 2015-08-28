@@ -169,10 +169,15 @@ fine, but remember that you will have to adjust files and actions accordingly.
   We do our best to point out where you will need to change things if your
   hostnames do not match.
 
-- If you cannot create real forward resolving DNS entries in your DNS system, you
-  will need to set up your own DNS server in the beta testing environment.
-  Documentation is provided on DNSMasq in an appendix, [APPENDIX - DNSMasq
-  setup](#appendix---dnsmasq-setup)
+- Atomic Enterprise comes with a "router" component for external
+  access to the cluster, using HAProxy.  This is optional, but it is
+  very common to want external systems to be able to access a cluster.
+
+  If you do not have administrative access to an existing DNS system
+  (e.g. Route 53 in AWS, or a private DNS infrastructure), you will
+  need to set up your own DNS server in the beta testing environment.
+  Documentation is provided on DNSMasq in an appendix, [APPENDIX -
+  DNSMasq setup](#appendix---dnsmasq-setup)
 
   Remember that NetworkManager may make changes to your DNS
   configuration/resolver/etc. You will need to properly configure your interfaces'
@@ -182,11 +187,12 @@ fine, but remember that you will have to adjust files and actions accordingly.
 
     https://github.com/openshift/training/issues/193#issuecomment-105693742
 
-- You will need to have a wildcard for a DNS zone resolve, ultimately, to the IP
-  address of the OpenShift router. For this training, we will ensure that the
-  router will end up on the OpenShift server that is running the master. Go
-  ahead and create a wildcard DNS entry for "cloudapps" (or something similar),
-  with a low TTL, that points to the public IP address of your master.
+  If you choose to use the router, you will need to have a wildcard
+  for a DNS zone resolve, ultimately, to the IP address of the
+  router. For this training, we will ensure that the router will end
+  up on the server that is running the master. Go ahead and create a
+  wildcard DNS entry for "cloudapps" (or something similar), with a
+  low TTL, that points to the public IP address of your master.
 
   For example:
 
