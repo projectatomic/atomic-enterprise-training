@@ -802,15 +802,20 @@ two quotas to the same namespace.
 
 ### Applying Quota to Projects
 At this point we have created our "demo" project, so let's apply the quota above
-to it. Still in a `root` terminal in the `training/eap-latest` folder:
+to it.
 
+```
+    cd training/eap-latest
     oc create -f quota.json --namespace=demo
+```
 
 If you want to see that it was created:
 
+```
     oc get -n demo quota
     NAME
     test-quota
+```
 
 And if you want to verify limits or examine usage:
 
@@ -836,9 +841,10 @@ both a pod and container level. Without default values for containers projects
 with quotas will fail because the deployer and other infrastructure pods are
 unbounded and therefore forbidden.
 
-As `root` in the `training/eap-latest` folder:
-
+Still in the `training/eap-latest` directory:
+```
     oc create -f limits.json --namespace=demo
+```
 
 Review your limit ranges
 
@@ -862,8 +868,6 @@ Open a terminal as `joe`:
 
 Then, execute:
 
-[//]: # (TODO: /etc/origin/master/ca.crt)
-
     oc login -u joe \
     --certificate-authority=/etc/origin/master/ca.crt \
     --server=https://ae-master.example.com:8443
@@ -876,6 +880,7 @@ folder. Take a look at it, and you'll see something like the following:
 
 [//]: # (TODO: /var/lib/openshift/openshift.local.certificates -> ???)
 
+```
     apiVersion: v1
     clusters:
     - cluster:
@@ -895,6 +900,7 @@ folder. Take a look at it, and you'll see something like the following:
     - name: joe/ae-master-example-com:8443
       user:
         token: ZmQwMjBiZjUtYWE3OC00OWE1LWJmZTYtM2M2OTY2OWM0ZGIw
+```
 
 This configuration file has an authorization token, some information about where
 our server lives, our project, etc.
@@ -906,8 +912,6 @@ the default token lifetime to 4 hours.
 ### Grab the Training Repo Again
 Since Joe and Alice can't access the training folder in root's home directory,
 go ahead and grab it inside Joe's home folder:
-
-[//]: # (TODO: set this to the right repository)
 
     cd
     git clone https://github.com/projectatomic/atomic-enterprise-training.git training
