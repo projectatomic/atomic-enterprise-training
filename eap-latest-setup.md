@@ -153,7 +153,7 @@ In most cases you will see references to "example.com" and other FQDNs related
 to it. If you choose not to use "example.com" in your configuration, that is
 fine, but remember that you will have to adjust files and actions accordingly.
 
-### DNS
+### Hostnames
 
 - All of your VMs must be able to access one another by each other's hostname.
 
@@ -168,6 +168,8 @@ fine, but remember that you will have to adjust files and actions accordingly.
 
   We do our best to point out where you will need to change things if your
   hostnames do not match.
+
+### The router and wildcard DNS
 
 - Atomic Enterprise comes with a "router" component for external
   access to the cluster, using HAProxy.  This is optional, but it is
@@ -256,9 +258,26 @@ should:
     docker pull docker.io/atomicenterprise/hello-atomic
     ```
 
-### Preparing The Master VM
+### Ansible preparation
 
-On the **master** node perform the following operations
+Currently, the vast majority of the heavy lifting for an Atomic
+Enterprise installation is currently implemented in an Ansible code
+base.  Ansible is available in the
+[EPEL](https://fedoraproject.org/wiki/EPEL) repository.
+
+In order to proceed, you must have functional ssh access to each node
+from a host with Ansible installed.  It will be significantly more
+pleasant if you have SSH public key authentication, rather than having
+to repeatedly type passwords.
+
+If you already have the knowledge and ability to run Ansible from your
+workstation, or a separate server with the SSH private keys or agent
+forwarding, you can skip to the next section.
+
+The following two steps detail how to prepare for Ansible from the
+master node (or you could choose to use a separate server).
+
+##### Ansible preparation: Installing Ansible client and the playbooks
 
 1. Install EPEL repo and then ansible
 
@@ -271,29 +290,33 @@ On the **master** node perform the following operations
 1. Clone the Atomic Enterprise Ansible repo:
 
     ```
-    cd /root
     git clone https://github.com/projectatomic/atomic-enterprise-ansible.git
     ```
 
-1.  Make sure (root) has an ssh key pair
+##### Ansible preparation: SSH
+
+1.  Ensure that this works:
 
     ```
-    ssh-keygen # generally defaults are good
+    ssh ae-node1.example.com
     ```
 
-1. Copy the ssh public key to **all** nodes in the cluster
+    If for example you used Anaconda to install on bare metal or virtual machines,
+    you may only have password authentication set up.  You can use the `ssh-copy-id`
+    program:
 
     ```
     for node in ae-master.example.com ae-node1.example.com ae-node2.example.com; do
         ssh-copy-id ${node}
     done
     ```
-    Remember to replace the hostnames with your hostnames
+
+##### Ansible: inventory
 
 1. Edit the byo (bring your own) inventory file to include your hosts
 
     ```
-    cd /root/atomic-enterprise-ansible
+    cd atomic-enterprise-ansible
     vi inventory/byo/hosts
     ```
 
