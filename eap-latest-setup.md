@@ -108,11 +108,24 @@ The "node" hosts user applications. You will learn much more about
 the inner workings of Atomic throughout the rest of the document.
 
 ### Requirements
-Each of the virtual machines should have 4+ GB of memory, 20+ GB of disk space,
-and the following configuration:
+
+You should begin this tutorial with a basic grasp of how to provision
+multiple Red Hat Enterprise Linux instances on at least one chosen
+physical/virtual platform.  That platform could be local
+libvirt/virt-manager on your laptop, a private OpenStack instance, Red
+Hat Satellite with bare metal PXE booting, or it could be EC2 or
+another public cloud, etc.
+
+For the deployment target, you should know at least:
+
+ - How to set up authentication with ssh (e.g. in public cloud, via cloud-init most commonly, on bare metal, with kickstart or manually in the Anaconda GUI)
+ - How to manage storage and networking (particularly firewalls)
+
+Each machine should have 4+ GB of memory, 20+ GB of disk space, and
+the following configuration:
 
 * Red Hat Enterprise Linux >=7.1 (Note: 7.1 kernel is required for openvswitch)
-* "Minimal" installation option
+* If using Anaconda, the "Minimal" installation option (the default for the KVM and AWS images etc. is fine)
 
 **Note:** At the current time, Atomic Enterprise Platform is not
 supported for deployment on Red Hat Enterprise Linux Atomic Host.
