@@ -562,20 +562,17 @@ my workload will never get scheduled. Bummer.
 How can we make this more intelligent? We'll finally use "regions" and "zones".
 
 ### Customizing the Scheduler Configuration
-[//]: # (TODO: /etc/openshift -> ??)
 
 The Ansible installer is configured to understand "regions" and "zones" as a
 matter of convenience. However, for the master (scheduler) to actually do
 something with them requires changing from the default configuration Take a look
-at `/etc/openshift/master/master-config.yaml` and find the line with `schedulerConfigFile`.
-
-[//]: # (TODO: /etc/openshift -> ??)
+at `/etc/origin/master/master-config.yaml` and find the line with `schedulerConfigFile`.
 
 You should see:
 
-    schedulerConfigFile: "/etc/openshift/master/scheduler.json"
+    schedulerConfigFile: "/etc/origin/master/scheduler.json"
 
-Then, take a look at `/etc/openshift/master/scheduler.json`. It will have the
+Then, take a look at `/etc/origin/master/scheduler.json`. It will have the
 following content:
 
     {
@@ -688,14 +685,14 @@ installing:
 
 From there, we can create a password for our users, Joe and Alice:
 
-    touch /etc/openshift/openshift-passwd
-    htpasswd -b /etc/openshift/openshift-passwd joe redhat
-    htpasswd -b /etc/openshift/openshift-passwd alice redhat
+    touch /etc/origin/passwd
+    htpasswd -b /etc/origin/passwd joe redhat
+    htpasswd -b /etc/origin/passwd alice redhat
 
-[//]: # (TODO: fix the /etc/openshift/master.yaml path)
+[//]: # (TODO: fix the /etc/origin/master.yaml path)
 
 The Atomic Enterprise configuration is kept in a YAML file which currently lives at
-`/etc/openshift/master/master-config.yaml`. Ansible was configured to edit
+`/etc/origin/master/master-config.yaml`. Ansible was configured to edit
 the `oauthConfig`'s `identityProviders` stanza so that it looks like the following:
 
     identityProviders:
@@ -704,7 +701,7 @@ the `oauthConfig`'s `identityProviders` stanza so that it looks like the followi
       name: htpasswd_auth
       provider:
         apiVersion: v1
-        file: /etc/openshift/openshift-passwd
+        file: /etc/origin/passwd
         kind: HTPasswdPasswordIdentityProvider
 
 More information on these configuration settings (and other identity providers) can be found here:
@@ -865,10 +862,10 @@ Open a terminal as `joe`:
 
 Then, execute:
 
-[//]: # (TODO: /etc/openshift/master/ca.crt)
+[//]: # (TODO: /etc/origin/master/ca.crt)
 
     oc login -u joe \
-    --certificate-authority=/etc/openshift/master/ca.crt \
+    --certificate-authority=/etc/origin/master/ca.crt \
     --server=https://ae-master.example.com:8443
 
 Atomic Enterprise, by default, is using a self-signed SSL certificate, so we must point
@@ -882,7 +879,7 @@ folder. Take a look at it, and you'll see something like the following:
     apiVersion: v1
     clusters:
     - cluster:
-        certificate-authority: ../../../../etc/openshift/master/ca.crt
+        certificate-authority: ../../../../etc/origin/master/ca.crt
         server: https://ae-master.example.com:8443
       name: ae-master-example-com-8443
     contexts:
@@ -1201,9 +1198,9 @@ CA which we will use.
 
 On the master, as `root`:
 
-[//]: # (TODO: /etc/openshift -> ???)
+[//]: # (TODO: /etc/origin -> ???)
 
-    CA=/etc/openshift/master
+    CA=/etc/origin/master
     oadm create-server-cert --signer-cert=$CA/ca.crt \
           --signer-key=$CA/ca.key --signer-serial=$CA/ca.serial.txt \
           --hostnames='*.cloudapps.example.com' \
@@ -1241,10 +1238,10 @@ up our `.kubeconfig` for the root user, `oadm router` is asking us what
 credentials the *router* should use to communicate. We also need to specify the
 router image, since the tooling defaults to upstream/origin:
 
-[//]: # (TODO: /etc/openshift/master/openshift-router.kubeconfig)
+[//]: # (TODO: /etc/origin/master/openshift-router.kubeconfig)
 
     oadm router --dry-run \
-    --credentials=/etc/openshift/master/openshift-router.kubeconfig
+    --credentials=/etc/origin/master/openshift-router.kubeconfig
 
 Adding that would be enough to allow the command to proceed, but if we want
 this router to work for our environment, we also need to specify the beta
@@ -1255,7 +1252,7 @@ to supply the wildcard cert/key that we created for the cloud domain.
 [//]: # (TODO: registry.access.redhat.com/openshift3/ose-${component}:latest)
 
     oadm router --default-cert=cloudapps.router.pem \
-    --credentials=/etc/openshift/master/openshift-router.kubeconfig \
+    --credentials=/etc/origin/master/openshift-router.kubeconfig \
     --selector='region=infra' \
     --images='registry.access.redhat.com/openshift3/ose-${component}:latest'
 
@@ -1586,14 +1583,14 @@ You can reach the route securely and check that it is using the right certificat
 
 [//]: # (TODO: fix cacert path)
 
-    curl --cacert /etc/openshift/master/ca.crt \
+    curl --cacert /etc/origin/master/ca.crt \
              https://hello-atomic.cloudapps.example.com
     Hello Atomic!
 
 And:
 
     openssl s_client -connect hello-atomic.cloudapps.example.com:443 \
-                       -CAfile /etc/openshift/master/ca.crt
+                       -CAfile /etc/origin/master/ca.crt
     CONNECTED(00000003)
     depth=1 CN = openshift-signer@1430768237
     verify return:1
@@ -1629,7 +1626,7 @@ Open a new terminal window as the `alice` user:
 and login to Atomic Enterprise:
 
     oc login -u alice \
-    --certificate-authority=/etc/openshift/master/ca.crt \
+    --certificate-authority=/etc/origin/master/ca.crt \
     --server=https://ae-master.example.com:8443
 
     Authentication required for https://ae-master.example.com:8443 (openshift)
@@ -1742,7 +1739,7 @@ registry. As the `root` user, run the following:
 [//]: # (TODO: fix the image path)
 
     oadm registry --create \
-    --credentials=/etc/openshift/master/openshift-registry.kubeconfig \
+    --credentials=/etc/origin/master/openshift-registry.kubeconfig \
     --images='registry.access.redhat.com/openshift3/ose-${component}:latest' \
     --selector="region=infra" --mount-host=/mnt/registry
 
@@ -2378,7 +2375,7 @@ Common problems
         rm .kubeconfig
 
         oc login \
-        --certificate-authority=/etc/openshift/master/ca.crt \
+        --certificate-authority=/etc/origin/master/ca.crt \
         --cluster=master --server=https://ae-master.example.com:8443 \
         --namespace=[INSERT NAMESPACE HERE]
 
