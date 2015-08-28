@@ -1035,10 +1035,10 @@ fourth, because the quota on this project limits us to three total pods.
 Go ahead and use `oc create` and you will see the following:
 
     oc create -f hello-quota.json
-    pods/1-hello-atomic
-    pods/2-hello-atomic
-    pods/3-hello-atomic
-    Error: pods "4-hello-atomic" is forbidden: Limited to 3 pods
+    pods/hello-atomic-1
+    pods/hello-atomic-2
+    pods/hello-atomic-3
+    Error from server: Pod "hello-atomic-4" is forbidden: Limited to 3 pods
 
 Let's delete these pods quickly. As `joe` again:
 
@@ -1048,6 +1048,7 @@ Let's delete these pods quickly. As `joe` again:
 check*. Be careful.
 
 ## Services
+
 From the [Kubernetes
 documentation](https://github.com/GoogleCloudPlatform/kubernetes/blob/master/docs/services.md):
 
@@ -1067,11 +1068,10 @@ If you think back to the simple pod we created earlier, there was a "label":
 
 Now, let's look at a *service* definition:
 
-[//]: # (TODO: check the apiVersion)
-
+```
     {
       "kind": "Service",
-      "apiVersion": "v1beta3",
+      "apiVersion": "v1",
       "metadata": {
         "name": "hello-atomic-service"
       },
@@ -1088,6 +1088,7 @@ Now, let's look at a *service* definition:
         ]
       }
     }
+```
 
 The *service* has a `selector` element. In this case, it is a key:value pair of
 `name:hello-atomic`. If you looked at the output of `oc get pods` on your
@@ -1105,24 +1106,23 @@ see more about this later.
 But, to really be useful, we want to make our application accessible via a FQDN,
 and that is where the routing tier comes in.
 
-## Routing
+## Optional: Routing
 
-[//]: # (TODO: correct openshift3/)
+Services are a way for pods inside your cluster to talk to each other.
+As mentioned above, if you want external access, Atomic Enterprise
+comes with a "router" component.  This is based on the robust HAProxy
+project, and can perform things like common SSL terminaton.
 
-The AE routing tier is how FQDN-destined traffic enters the Atomic
-environment so that it can ultimately reach pods. In a simplification of the
-process, the `openshift3/ose-haproxy-router` container we will create below
-is a pre-configured instance of HAProxy as well as some of the AE
-framework. The Atomic instance running in this container watches for route
-resources on the Atomic master.
+In a simplification of the process, the `aos3/aos3-haproxy-router`
+container we will create below is a pre-configured instance of HAProxy
+as well as some of the AE framework. The Atomic instance running in
+this container watches for route resources on the Atomic master.
 
 Here is an example route resource JSON definition:
 
-[//]: # (TODO: check the apiVersion)
-
     {
       "kind": "Route",
-      "apiVersion": "v1beta3",
+      "apiVersion": "v1",
       "metadata": {
         "name": "hello-atomic-route"
       },
@@ -1159,13 +1159,12 @@ is unencrypted.
 It is possible to utilize various TLS termination mechanisms, and more details
 is provided in the router documentation:
 
-[//]: # (TODO: docs.openshift.org -> ???)
-
     http://docs.openshift.org/latest/architecture/core_objects/routing.html#securing-routes
 
 We'll see this edge termination in action shortly.
 
 ### Creating a Wildcard Certificate
+
 In order to serve a valid certificate for secure access to applications in our
 cloud domain, we will need to create a key and wildcard certificate that the
 router will use by default for any routes that do not specify a key/cert of their
@@ -1173,8 +1172,6 @@ own. Atomic supplies a command for creating a key/cert signed by the AE's
 CA which we will use.
 
 On the master, as `root`:
-
-[//]: # (TODO: /etc/origin -> ???)
 
     CA=/etc/origin/master
     oadm create-server-cert --signer-cert=$CA/ca.crt \
