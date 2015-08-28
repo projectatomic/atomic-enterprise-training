@@ -921,6 +921,7 @@ go ahead and grab it inside Joe's home folder:
 In the `eap-latest` training folder, you can see the contents of our pod definition by
 using `cat`:
 
+```
     cat hello-pod.json
     {
       "kind": "Pod",
@@ -932,47 +933,14 @@ using `cat`:
           "name": "hello-atomic"
         }
       },
-      "spec": {
-        "containers": [
-          {
-            "name": "hello-atomic",
-            "image": atomicenterprise/hello-atomic",
-            "ports": [
-              {
-                "hostPort": 36061,
-                "containerPort": 8080,
-                "protocol": "TCP"
-              }
-            ],
-            "resources": {
-              "limits": {
-                "cpu": "10m",
-                "memory": "16Mi"
-              }
-            },
-            "terminationMessagePath": "/dev/termination-log",
-            "imagePullPolicy": "IfNotPresent",
-            "capabilities": {},
-            "securityContext": {
-              "capabilities": {},
-              "privileged": false
-            },
-            "nodeSelector": {
-              "region": "primary"
-            }
-          }
-        ],
-        "restartPolicy": "Always",
-        "dnsPolicy": "ClusterFirst",
-        "serviceAccount": ""
-      },
-      "status": {}
-    }
+      ...
+```
 
-In the simplest sense, a *pod* is an application or an instance of something. If
-you are familiar with OpenShift V2 terminology, it is similar to a *gear*.
-Reality is more complex, and we will learn more about the terms as we explore
-AE further.
+A *pod* is a *group* of Docker containers that are always scheduled
+together on the same node, and can access each other's exposed ports.
+If you are familiar with OpenShift V2 terminology, it is somewhat
+similar to a *gear*.  Reality is more complex, and we will learn more
+about the terms as we explore AE further.
 
 ### Run the Pod
 As `joe`, to create the pod from our JSON file, execute the following:
@@ -1009,38 +977,42 @@ You may want to know more about the `hello-atomic` pod:
         Restart Count:      0
     ...
 
-[//]: # (TODO: openshift3/ -> ???)
+However, we have not yet created a *service* for this pod, and thus it
+won't be exported by the system.  But if we had other applications running,
+this pod could talk to them.
 
-On the node where the pod is running (`HOST`), look at the list of Docker
-containers with `docker ps` (in a `root` terminal) to see the bound ports.  We
-should see an `openshift3/ose-pod` container bound to 36061 on the host and
-bound to 8080 on the container, along with several other `ose-pod` containers.
+Note that this hello-atomic pod is distinct from the one you launched
+earlier as an administrator.
 
-[//]: # (TODO: correct names, images and container IDs)
+You should again be able to access it via:
 
-    CONTAINER ID   IMAGE                                    COMMAND           CREATED         STATUS         PORTS                     NAMES
-    ded86f750698   atomicenterprise/hello-atomic:v0.5.2.2   "/hello-atomic"   7 minutes ago   Up 7 minutes                             k8s_hello-atomic.b69b23ff_hello-atomic_demo_522adf06-0f83-11e5-982b-525400a4dc47_f491f4be
-    405d63115a60   openshift3/ose-pod:latest                "/pod"            7 minutes ago   Up 7 minutes   0.0.0.0:36061->8080/tcp   k8s_POD.ad86e772_hello-atomic_demo_522adf06-0f83-11e5-982b-525400a4dc47_6cc974dc
+```
+    curl http://$IP_FROM_ABOVE:8080/
+```
 
-[//]: # (TODO: openshift3/ -> ???)
+##### Inspecting the Docker state
 
-The `openshift3/ose-pod` container exists because of the way network
-namespacing works in Kubernetes. For the sake of simplicity, think of the
-container as nothing more than a way for the host OS to get an interface created
-for the corresponding pod to be able to receive traffic. Deeper understanding of
-networking in AE is outside the scope of this material.
+Docker is the container infrastructure underlying Kubernetes.  Let's
+take a moment to look at what is going on at that level.
 
-To verify that the app is working, you can issue a curl to the app's port *on
-the node where the pod is running*
+On the node where the pod is running (`HOST`), look at the list of
+Docker containers with `docker ps` (in a `root` terminal) to see the
+bound ports.  We should see an `openshift3/ose-pod` container bound to
+36061 on the host and bound to 8080 on the container, along with
+several other `ose-pod` containers.
 
-    curl http://localhost:36061
-    Hello Atomic!
+```
+# docker ps
+abd9061cf2fd        atomicenterprise/hello-atomic   "/hello-atomic"     19 minutes ago      Up 19 minutes                           k8s_hello-atomic.65804d4d_hello-atomic_demo_71c467dc-4db3-11e5-a843-fa163e472414_96731d91   
+e8af42b67175        aos3/aos-pod:v3.0.1.100         "/pod"              19 minutes ago      Up 19 minutes                           k8s_POD.2d6df2fa_hello-atomic_demo_71c467dc-4db3-11e5-a843-fa163e472414_b47f195f
+```
 
-Hooray!
-
-### Extra Credit
-If you try to curl the pod IP and port, you get "connection refused". See if you
-can figure out why.
+The `aos3/aos-pod` container exists because of the way network
+namespacing works in Kubernetes. For the sake of simplicity, think of
+the container as nothing more than a way for the host OS to get an
+interface created for the corresponding pod to be able to receive
+traffic. Deeper understanding of networking in AE is outside the scope
+of this material.
 
 ### Delete the Pod
 As `joe`, go ahead and delete this pod so that you don't get confused in later examples:
@@ -1052,7 +1024,7 @@ an arbitrary Docker image, made sure to fetch it (if it wasn't present), and
 then ran it. This could have just as easily been an application from an ISV
 available in a registry or something already written and built in-house.
 
-This is really powerful. We will explore using "arbitrary" docker images later.
+This is really powerful. We will explore using "arbitrary" Docker images later.
 
 ### Quota Enforcement
 Since we know we can run a pod directly, we'll go through a simple quota
