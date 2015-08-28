@@ -18,8 +18,7 @@
         "ports": [
           {
             "protocol": "TCP",
-            "port": 27017,
-            "targetPort": 8080
+            "port": 8080
           }
         ]
       }
@@ -74,7 +73,7 @@
                 "image": "atomicenterprise/hello-atomic",
                 "ports": [
                   {
-                    "name": "hello-atomic-tcp-8080",
+                    "name": "hello-atomic",
                     "containerPort": 8080,
                     "protocol": "TCP"
                   }

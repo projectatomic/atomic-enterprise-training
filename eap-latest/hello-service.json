@@ -1,0 +1,18 @@
+{
+    "kind": "Service",
+    "apiVersion": "v1",
+    "metadata": {
+        "name": "hello-atomic-service"
+    },
+    "spec": {
+        "selector": {
+            "name": "hello-atomic"
+        },
+        "ports": [
+            {
+		"protocol": "TCP",
+		"port": 8080
+            }
+        ]
+    }
+}

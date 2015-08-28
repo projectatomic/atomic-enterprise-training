@@ -1069,25 +1069,25 @@ If you think back to the simple pod we created earlier, there was a "label":
 Now, let's look at a *service* definition:
 
 ```
-    {
-      "kind": "Service",
-      "apiVersion": "v1",
-      "metadata": {
+$ cat hello-service.json	
+{
+    "kind": "Service",
+    "apiVersion": "v1",
+    "metadata": {
         "name": "hello-atomic-service"
-      },
-      "spec": {
+    },
+    "spec": {
         "selector": {
-          "name":"hello-atomic"
+            "name": "hello-atomic"
         },
         "ports": [
-          {
-            "protocol": "TCP",
-            "port": 80,
-            "targetPort": 9376
-          }
+            {
+		"protocol": "TCP",
+		"port": 8080
+            }
         ]
-      }
     }
+}
 ```
 
 The *service* has a `selector` element. In this case, it is a key:value pair of
@@ -1099,17 +1099,33 @@ master, you saw that the `hello-atomic` pod has a label:
 The definition of the *service* tells Kubernetes that any pods with the label
 "name=hello-atomic" are associated, and should have traffic distributed
 amongst them. In other words, the service itself is the "connection to the
-network", so to speak, or the input point to reach all of the pods. Generally
-speaking, pod containers should not bind directly to ports on the host. We'll
-see more about this later.
+network", so to speak, or the input point to reach all of the pods.
 
-But, to really be useful, we want to make our application accessible via a FQDN,
-and that is where the routing tier comes in.
+By default, the security policy for non-cluster administrators does
+not allow binding to specific ports on the host.  Let's make the
+hello-atomic app exposed across the cluster with the above service.
+
+We first recreate the pod, as the quota demo deleted earlier versions.
+
+```
+    oc create -f hello-pod.json
+    oc create -f hello-service.json
+    oc describe services/hello-atomic-service
+```
+
+Note the `Endpoints: 10.1.0.6:8080` entry.  You should be able to
+access the `hello-atomic` pod from *any* node within the cluster using
+`curl`:
+
+```
+$ curl http://10.1.0.6:8080
+Hello Atomic!
+```
 
 ## Optional: Routing
 
 Services are a way for pods inside your cluster to talk to each other.
-As mentioned above, if you want external access, Atomic Enterprise
+As mentioned above, if you want *external* access, Atomic Enterprise
 comes with a "router" component.  This is based on the robust HAProxy
 project, and can perform things like common SSL terminaton.
 
@@ -1187,55 +1203,22 @@ a single PEM format file that the router needs in the next step.
 Make sure you remember where you put this PEM file.
 
 ### Creating the Router
+
 The router is the ingress point for all traffic destined for AE
 services. It currently supports only HTTP(S) traffic (and "any"
 TLS-enabled traffic via SNI). While it is called a "router", it is essentially a
 proxy.
 
-[//]: # (TODO: rename openshift3/)
-
-The `openshift3/ose-haproxy-router` container listens on the host network
-interface unlike most containers that listen only on private IPs. The router
-proxies external requests for route names to the IPs of actual pods identified
-by the service associated with the route.
+The `aos3/aos-haproxy-router` container listens on the host network
+interface unlike most containers that listen only on private IPs. The
+router proxies external requests for route names to the IPs of actual
+pods identified by the service associated with the route.
 
 AE's admin command set enables you to deploy router pods automatically.
-Let's try to create one:
 
-    oadm router
-    error: router could not be created; you must specify a .kubeconfig file path containing credentials for connecting the router to the master with --credentials
+Follow these instructions from the OpenShift documentation:
 
-Just about every form of communication with AE components is secured by
-SSL and uses various certificates and authentication methods. Even though we set
-up our `.kubeconfig` for the root user, `oadm router` is asking us what
-credentials the *router* should use to communicate. We also need to specify the
-router image, since the tooling defaults to upstream/origin:
-
-[//]: # (TODO: /etc/origin/master/openshift-router.kubeconfig)
-
-    oadm router --dry-run \
-    --credentials=/etc/origin/master/openshift-router.kubeconfig
-
-Adding that would be enough to allow the command to proceed, but if we want
-this router to work for our environment, we also need to specify the beta
-router image (the tooling defaults to upstream/origin otherwise) and we need
-to supply the wildcard cert/key that we created for the cloud domain.
-
-[//]: # (TODO: /var/lib/openshift/openshift.local.certificates/openshift-router)
-[//]: # (TODO: registry.access.redhat.com/openshift3/ose-${component}:latest)
-
-    oadm router --default-cert=cloudapps.router.pem \
-    --credentials=/etc/origin/master/openshift-router.kubeconfig \
-    --selector='region=infra' \
-    --images='registry.access.redhat.com/openshift3/ose-${component}:latest'
-
-If this works, you'll see some output:
-
-    services/router
-    deploymentConfigs/router
-
-**Note:** You will have to reference the absolute path of the PEM file if you
-did not run this command in the folder where you created it.
+      https://docs.openshift.org/latest/admin_guide/install/deploy_router.html#haproxy-router
 
 Let's check the pods:
 
@@ -1304,121 +1287,23 @@ Pod-Service-Route definition template and put all the pieces together.
 Don't forget -- the materials are in `~/training/eap-latest`.
 
 ### Creating the Definition
-The following is a complete definition for a pod with a corresponding service
-and a corresponding route. It also includes a deployment configuration.
 
-[//]: # (TODO: check the apiVersion)
-[//]: # (TODO: cnahge items[3]['triggers']["from"]["name"])
-[//]: # (TODO: cnahge items[3]['template']["controllerTemplate"]["podTemplate"]["desiredState"]["manifest"]["containers"]["image"])
+Let's look at `test-complete.json`, which is a complete definition for
+a pod with a corresponding service and a corresponding route. It also
+includes a deployment configuration.
 
+```
+cat test-complete.json
+{
+  "kind": "List",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "hello-service-complete-example"
+  },
+  "items": [
     {
-      "kind": "Config",
-      "apiVersion": "v1beta3",
-      "metadata": {
-        "name": "hello-service-complete-example"
-      },
-      "items": [
-        {
-          "kind": "Service",
-          "apiVersion": "v1beta3",
-          "metadata": {
-            "name": "hello-atomic-service"
-          },
-          "spec": {
-            "selector": {
-              "name": "hello-atomic"
-            },
-            "ports": [
-              {
-                "protocol": "TCP",
-                "port": 27017,
-                "targetPort": 8080
-              }
-            ]
-          }
-        },
-        {
-          "kind": "Route",
-          "apiVersion": "v1beta3",
-          "metadata": {
-            "name": "hello-atomic-route"
-          },
-          "spec": {
-            "host": "hello-atomic.cloudapps.example.com",
-            "to": {
-              "name": "hello-atomic-service"
-            },
-            "tls": {
-              "termination": "edge"
-            }
-          }
-        },
-        {
-          "kind": "DeploymentConfig",
-          "apiVersion": "v1beta3",
-          "metadata": {
-            "name": "hello-atomic"
-          },
-          "spec": {
-            "strategy": {
-              "type": "Recreate",
-              "resources": {}
-            },
-            "replicas": 1,
-            "selector": {
-              "name": "hello-atomic"
-            },
-            "template": {
-              "metadata": {
-                "creationTimestamp": null,
-                "labels": {
-                  "name": "hello-atomic"
-                }
-              },
-              "spec": {
-                "containers": [
-                  {
-                    "name": "hello-atomic",
-                    "image": "atomic-enterprise/hello-atomic:v0.5.2.2",
-                    "ports": [
-                      {
-                        "name": "hello-atomic-tcp-8080",
-                        "containerPort": 8080,
-                        "protocol": "TCP"
-                      }
-                    ],
-                    "resources": {},
-                    "terminationMessagePath": "/dev/termination-log",
-                    "imagePullPolicy": "PullIfNotPresent",
-                    "capabilities": {},
-                    "securityContext": {
-                      "capabilities": {},
-                      "privileged": false
-                    },
-                    "livenessProbe": {
-                      "tcpSocket": {
-                        "port": 8080
-                      },
-                      "timeoutSeconds": 1,
-                      "initialDelaySeconds": 10
-                    }
-                  }
-                ],
-                "restartPolicy": "Always",
-                "dnsPolicy": "ClusterFirst",
-                "serviceAccount": "",
-                "nodeSelector": {
-                  "region": "primary"
-                }
-              }
-            }
-          },
-          "status": {
-            "latestVersion": 1
-          }
-        }
-      ]
-    }
+...
+```
 
 In the JSON above:
 
@@ -1554,8 +1439,6 @@ Go ahead and `exit` from the container.
 
 You can reach the route securely and check that it is using the right certificate:
 
-[//]: # (TODO: fix cacert path)
-
     curl --cacert /etc/origin/master/ca.crt \
              https://hello-atomic.cloudapps.example.com
     Hello Atomic!
@@ -1589,9 +1472,11 @@ at his project, with his project administrator rights he can add her using the
 selected. If you recall earlier, when we logged in as `joe` we ended up in the
 `demo` project. We'll see how to switch projects later.
 
-Open a new terminal window as the `alice` user:
+Go back to root, then open a new terminal window as the `alice` user:
 
+```
     su - alice
+```
 
 [//]: # (TODO: fix ca path)
 [//]: # (TODO: fix "Authentication required ... XXX" text)
@@ -1645,8 +1530,6 @@ project permissions. Atomic Enterprise RBAC is extremely flexible. The roles
 mentioned here are simply defaults - they can be adjusted (per-project
 and per-resource if needed), more can be added, groups can be given
 access, etc. Check the documentation for more details:
-
-[//]: # (TODO: docs.openshift.org -> docs.atomic.org ??)
 
 * http://docs.openshift.org/latest/dev_guide/authorization.html
 * https://github.com/openshift/origin/blob/master/docs/proposals/policy.md
