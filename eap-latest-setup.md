@@ -464,25 +464,24 @@ services, scheduling, authentication and all sorts of other information follows.
 There was also some information about "regions" and "zones" in the hosts file.
 Let's talk about those concepts now.
 
-If you think you're about to learn how to configure regions and zones in
-Atomic Enterprise, you're only partially correct.
+If you are familiar with OpenShift 2, in that system, "regions" and
+"zones" enable organizations to provide some topologies for
+application resiliency. Apps would be spread throughout the zones in a
+region and, depending on the way you configured OpenShift 2, you could
+make different regions accessible to users.
 
-In OpenShift 2, we introduced the specific concepts of "regions" and "zones" to
-enable organizations to provide some topologies for application resiliency. Apps
-would be spread throughout the zones in a region and, depending on the way you
-configured OpenShift, you could make different regions accessible to users.
+Atomic Enterprise (and OpenShift v3) are different, being based on an
+entirely new underlying Kubernetes infrastructure.  Kubernetes doesn't
+actually care about topology - it is topology agnostic.  On top of
+that, Atomic Enterprise provides advanced controls for implementing
+whatever topologies you can dream up, leveraging filtering and
+affinity rules to ensure that parts of applications (pods) are either
+grouped together or spread apart.
 
-The reason that you're only "partially" correct in your assumption is that, for
-OpenShift 3 and Atomic Enterprise, Kubernetes doesn't actually care about your
-topology. In other words, AE is "topology agnostic". In fact, AE provides
-advanced controls for implementing whatever topologies you can dream up,
-leveraging filtering and affinity rules to ensure that parts of applications
-(pods) are either grouped together or spread apart.
-
-For the purposes of a simple example, we'll be sticking with the "regions" and
-"zones" theme. But, as you go through these examples, think about what other
-complex topologies you could implement. Perhaps "secure" and "insecure" hosts,
-or other topologies.
+For the purposes of a simple example, we'll be sticking with the
+"regions" and "zones" theme. But, as you go through these examples,
+think about what other complex topologies you could implement. Perhaps
+"secure" and "insecure" hosts, or other topologies.
 
 First, we need to talk about the "scheduler" and its default configuration.
 
