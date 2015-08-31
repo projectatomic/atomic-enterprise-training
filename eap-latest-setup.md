@@ -125,7 +125,7 @@ the following configuration:
 supported for deployment on Red Hat Enterprise Linux Atomic Host.
 
 The majority of storage requirements are related to Docker, etcd, and a docker
-image repository.  The etcd state lives in `/var/lib/atomic-enterprise/openshift.local.etcd/`,
+image repository.  The etcd state (like all service state by default) lives in `/var/lib/etcd/`,
 so be sure to allocate storage for it. Leave space somewhere on the master to store
 images and metadata for the docker registry. In later examples we will use `/mnt/registry`.
 For Docker, the currently recommended storage configuration is "direct LVM" using
