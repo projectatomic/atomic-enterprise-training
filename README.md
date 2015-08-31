@@ -3,6 +3,11 @@ Based on the world’s leading enterprise Linux, Red Hat Atomic Enterprise Platf
 
 For more information [read the press release](http://www.redhat.com/en/about/press-releases/red-hat-unveils-red-hat-atomic-enterprise-platform-production-deployment-secure-certified-linux-containers-scale).
 
+This guide focuses on Atomic Enterprise Platform.  However, there is
+ongoing work to share more work with OpenShift v3, and thus you might
+find newer instructions in the [OpenShift
+version](https://github.com/openshift/training) of this guide.
+
 ## Differences from Openshift v3
 The following features are not provided with Atomic Enterprise, but are with OpenShift v3:
 - STI (Source-To-Image builder)
