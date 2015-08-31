@@ -79,6 +79,12 @@
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Atomic Enterprise Platform Early Access Program
+
+This guide focuses on Atomic Enterprise Platform.  However, there is
+ongoing work to share more work with OpenShift v3, and thus you might
+find newer instructions in the [OpenShift
+version](https://github.com/openshift/training) of this guide.
+
 ## Architecture and Requirements
 ### Architecture
 The documented architecture for the early access testing is pretty simple. There are
