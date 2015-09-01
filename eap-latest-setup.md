@@ -497,10 +497,10 @@ think about what other complex topologies you could implement. Perhaps
 First, we need to talk about the "scheduler" and its default configuration.
 
 ### Scheduler and Defaults
-The "scheduler" is essentially the Atomic master. Any time a pod needs to be
+The "scheduler" is essentially the Kubernetes master. Any time a pod needs to be
 created (instantiated) somewhere, the master needs to figure out where to do
 this. This is called "scheduling". The default configuration for the scheduler
-looks like the following JSON (although this is embedded in the Origin code
+looks like the following JSON (although this is embedded in the code
 and you won't find this in a file):
 
     {
@@ -701,8 +701,6 @@ From there, we can create a password for our users, Joe and Alice:
     htpasswd -b /etc/origin/passwd joe redhat
     htpasswd -b /etc/origin/passwd alice redhat
 
-[//]: # (TODO: fix the /etc/origin/master.yaml path)
-
 The Atomic Enterprise configuration is kept in a YAML file which currently lives at
 `/etc/origin/master/master-config.yaml`. Ansible was configured to edit
 the `oauthConfig`'s `identityProviders` stanza so that it looks like the following:
@@ -717,8 +715,6 @@ the `oauthConfig`'s `identityProviders` stanza so that it looks like the followi
         kind: HTPasswdPasswordIdentityProvider
 
 More information on these configuration settings (and other identity providers) can be found here:
-
-[//]: # (TODO: Will we have something like docs.automic.org ?)
 
     http://docs.openshift.org/latest/admin_guide/configuring_authentication.html#HTPasswdPasswordIdentityProvider
 
@@ -764,9 +760,7 @@ etc. all ends up manipulating AE and Kubernetes resources under the
 covers. Resources can have quotas enforced against them, so let's take a moment
 to look at some example JSON for project resource quota might look like:
 
-[//]: # (TODO: check, what will be correct version of api)
-
-
+```
     {
       "apiVersion": "v1",
       "kind": "ResourceQuota",
@@ -784,6 +778,7 @@ to look at some example JSON for project resource quota might look like:
         }
       }
     }
+```
 
 The above quota (simply called *test-quota*) defines limits for several
 resources. In other words, within a project, users cannot "do stuff" that will
@@ -889,8 +884,6 @@ our tool at the CA file.
 
 The `login` process created a file called `config` in the `~/.kube/config`
 folder. Take a look at it, and you'll see something like the following:
-
-[//]: # (TODO: /var/lib/openshift/openshift.local.certificates -> ???)
 
 ```
     apiVersion: v1
