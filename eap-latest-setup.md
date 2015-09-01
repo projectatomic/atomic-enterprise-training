@@ -24,7 +24,7 @@
     - [The NodeSelector](#the-nodeselector)
     - [Customizing the Scheduler Configuration](#customizing-the-scheduler-configuration)
     - [Node Labels](#node-labels)
-  - [Useful Logs](#useful-logs)
+  - [Diagnosing errors](#diagnosing-errors)
   - [Auth and Projects](#auth-and-projects)
     - [Configuring htpasswd Authentication](#configuring-htpasswd-authentication)
     - [A Project for Everything](#a-project-for-everything)
@@ -648,9 +648,10 @@ and "primary".
 From here we will start to deploy "applications" and other resources into
 AE.
 
-## Useful Logs
-RHEL 7 uses `systemd` and `journal`. As such, looking at logs is not a matter of
-`/var/log/messages` any longer. You will need to use `journalctl`.
+## Diagnosing errors
+RHEL 7 uses `systemd` and `journald`. You can find the output of most
+system components via e.g. `journalctl -b`.  Anything run by Docker will have
+its log messages available via `docker logs`.
 
 Since we are running all of the components in higher loglevels, it is suggested
 that you use your terminal emulator to set up windows for each process. If you
