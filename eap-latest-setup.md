@@ -13,13 +13,17 @@
     - [Git](#git)
     - [Preparing Each Machine](#preparing-each-machine)
     - [Ansible preparation](#ansible-preparation)
+      - [Clone the Atomic Enterprise/OpenShift Ansible git repo:](#clone-the-atomic-enterpriseopenshift-ansible-git-repo)
         - [Ansible preparation: Installing Ansible client and the playbooks](#ansible-preparation-installing-ansible-client-and-the-playbooks)
         - [Ansible preparation: SSH](#ansible-preparation-ssh)
         - [Ansible: inventory](#ansible-inventory)
     - [Run the installer (on the master)](#run-the-installer-on-the-master)
   - [Launch your very first pod](#launch-your-very-first-pod)
   - [The Next Step](#the-next-step)
-  - [Regions and Zones](#regions-and-zones)
+  - [Components](#components)
+    - [Kubernetes components](#kubernetes-components)
+    - [Atomic Enterprise components](#atomic-enterprise-components)
+  - [The Scheduler: Regions and Zones](#the-scheduler-regions-and-zones)
     - [Scheduler and Defaults](#scheduler-and-defaults)
     - [The NodeSelector](#the-nodeselector)
     - [Customizing the Scheduler Configuration](#customizing-the-scheduler-configuration)
@@ -470,10 +474,67 @@ The Ansible-based installer above did a significant amount of work for
 us, and at this point we're going to step back and look at the high
 level concepts, then dive down into more examples.
 
-## Regions and Zones
+## Components
 
-There was also some information about "regions" and "zones" in the hosts file.
-Let's talk about those concepts now.
+### Kubernetes components
+
+* Cluster : A cluster is a set of physical or virtual machines and other
+  infrastructure resources used by Kubernetes to run your
+  applications. Kubernetes can run anywhere! See the Getting Started
+  Guides for instructions for a variety of services.
+
+* Node : A node is a physical or virtual machine running Kubernetes,
+  onto which pods can be scheduled.
+
+* Pod : Pods are a colocated group of application containers with shared
+  volumes. They're the smallest deployable units that can be created,
+  scheduled, and managed with Kubernetes. Pods can be created
+  individually, but it's recommended that you use a replication
+  controller even if creating a single pod.
+
+* Replication controller : Replication controllers manage the lifecycle
+  of pods. They ensure that a specified number of pods are running at
+  any given time, by creating or killing pods as required.
+
+* Service : Services provide a single, stable name and address for a set
+  of pods. They act as basic load balancers.
+
+### Atomic Enterprise components
+
+* Deployment Config: Define the template for a pod and manages deploying
+  new images or configuration changes. A single deployment configuration
+  is usually analogous to a single micro-service. Can support many
+  different deployment patterns, including full restart, customizable
+  rolling updates, and fully custom behaviors, as well as pre- and post-
+  deployment hooks. Each individual deployment is represented as a
+  replication controller.
+
+  A deployment is "triggered" when its configuration is changed or a tag
+  in an Image Stream is changed. Triggers can be disabled to allow
+  manual control over a deployment. The "strategy"determines how the
+  deployment is carried out and may be changed at any time.
+
+* Route: A route allows developers to expose services through an HTTP(S)
+  aware load balancing and proxy layer via a public DNS entry. The route
+  may further specify TLS options and a certificate, or specify a public
+  CNAME that the router should also accept for HTTP and HTTPS
+  traffic. An administrator typically configures their router to be
+  visible outside the cluster firewall, and may also add additional
+  security, caching, or traffic controls on the service content. Routers
+  usually talk directly to the service endpoints.
+
+...and more: Users, security context constraints, etc.  Many of these
+concepts are in progress to be upstreamed from Atomic
+Enterprise/OpenShift into the Kubernetes project.
+
+## The Scheduler: Regions and Zones
+
+Now that we have an overview of the high level concepts, let's start
+diving into the details by looking at one of the major core pieces of
+functionality: the scheduler.
+
+There was some information about "regions" and "zones" in the hosts
+file.  We'll look at the scheduler by explaining these concepts.
 
 If you are familiar with OpenShift 2, in that system, "regions" and
 "zones" enable organizations to provide some topologies for
