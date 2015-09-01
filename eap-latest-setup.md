@@ -478,10 +478,9 @@ level concepts, then dive down into more examples.
 
 ### Kubernetes components
 
-* Cluster : A cluster is a set of physical or virtual machines and other
-  infrastructure resources used by Kubernetes to run your
-  applications. Kubernetes can run anywhere! See the Getting Started
-  Guides for instructions for a variety of services.
+* Cluster : A cluster is a set of physical or virtual machines and
+  other infrastructure resources used by Kubernetes (or derivatives
+  like Atomic Enterprise) to run your applications.
 
 * Node : A node is a physical or virtual machine running Kubernetes,
   onto which pods can be scheduled.
