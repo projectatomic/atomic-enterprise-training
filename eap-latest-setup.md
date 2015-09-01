@@ -335,7 +335,7 @@ them according to your DNS environment.
 ```
 
 For now do not worry much about the information after
-`openshift_node_labels=`. But do no omit it entirely.
+`openshift_node_labels=`. But do not omit it entirely.
 
 ### Run the installer (on the master)
 
