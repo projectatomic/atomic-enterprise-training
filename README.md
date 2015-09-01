@@ -11,8 +11,8 @@ version](https://github.com/openshift/training) of this guide.
 ## Differences from Openshift v3
 The following features are not provided with Atomic Enterprise, but are with OpenShift v3:
 - STI (Source-To-Image builder)
-- UI (web console)
 - Docker Builder
+- UI (web console)
 
 Atomic Enterprise will be introduced with a series of early access releases.
 This document provides an overview of the training materials for each release
@@ -41,14 +41,10 @@ Early Access Program training:
 - Internal service DNS
 - Expanded documentation/explanations
 - Integrated sdn into OpenShift
-  - No separate openshift-sdn-node and openshift-sdn-master packages or services
-    You should remove openshift-sdn-master and openshift-sdn-node packages or
-    preferably reprovision your environment when installing Beta 4
-  - Openvswitch based implementation provided via 'openshift-sdn-ovs' plugin
+  - Openvswitch based implementation provided via 'atomic-openshift-sdn-ovs' plugin
     package and configuring `networkPluginName: redhat/openshift-ovs-subnet` on
     master and nodes. Ansible does this for you by default.
-[//]: # (- Web console and project basics)
-[//]: # (- Rollback / Activate)
-[//]: # (- "integration" / webhooks)
 
-[The specific documentation is here.](eap-latest-setup.md)
+## Getting started
+
+[Read the training guide here](eap-latest-setup.md)
