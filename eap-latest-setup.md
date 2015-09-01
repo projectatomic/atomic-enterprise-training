@@ -661,8 +661,8 @@ window:
 
 [//]: # (TODO: check service nodes)
 
-    journalctl -f -u atomic-enterprise-master
-    journalctl -f -u atomic-enterprise-node
+    journalctl -f -u atomic-openshift-master
+    journalctl -f -u atomic-openshift-node
 
 **Note:** You will want to do this on the other nodes, but you won't need the
 "-master" service. You may also wish to watch the Docker logs, too.
@@ -1902,7 +1902,7 @@ standard environment variables.  The trick is knowing where to place them.
 
 Since the importer is on the Master we need to make the configuration change
 there.  The easiest way to do that is to add environment variables `NO_PROXY`,
-`HTTP_PROXY`, and `HTTPS_PROXY` to `/etc/sysconfig/atomic-enterprise-master` then restart
+`HTTP_PROXY`, and `HTTPS_PROXY` to `/etc/sysconfig/atomic-openshift-master` then restart
 your master.
 
 ~~~
@@ -1916,7 +1916,7 @@ sure it's listed in the `NO_PROXY` value.
 
 Now restart the Service:
 ~~~
-systemctl restart atomic-enterprise-master
+systemctl restart atomic-openshift-master
 ~~~
 
 If you had previously imported ImageStreams without the proxy configuration to can re-run the process as follows:
