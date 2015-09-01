@@ -149,9 +149,9 @@ fine, but remember that you will have to adjust files and actions accordingly.
 
 ### Hostnames
 
-- All of your VMs must be able to access one another by each other's hostname.
+- All of your machines *must* be able to access one another by each other's hostname.
 
-  In almost all cases, when referencing VMs you must use hostnames and the
+  In almost all cases, when referencing machines you must use hostnames and the
   hostnames that you use must match the output of `hostname -f` on each of your
   nodes. Forward DNS resolution of hostnames is an **absolute requirement**. This
   training document assumes the following configuration:
@@ -203,8 +203,8 @@ You will either need internet access or read and write access to an internal
 http-based git server where you will duplicate the public code repositories used
 in the labs.
 
-### Preparing Each VM
-Once your VMs are built and you have verified DNS and network connectivity you
+### Preparing Each Machine
+Once your machines are built and you have verified DNS and network connectivity you
 should:
 
 [//]: # (TODO: What are the right channels??)
@@ -330,7 +330,7 @@ master node (or you could choose to use a separate server).
     - For now do not worry much about the information after
       `openshift_node_labels=`. But do no omit it entirely.
 
-### Run the installer (on the master VM)
+### Run the installer (on the master)
 
 1. Run ansible to set up the cluster
     ```
