@@ -318,7 +318,7 @@ variable `deployment_type` and ensure it reads
     ```
     cd openshift-ansible
     cp inventory/byo/hosts.example hosts
-    sed -i -e 's,^deployment_type,deployment_type=atomic-enterprise,' hosts
+    sed -i -e 's,^deployment_type.*,deployment_type=atomic-enterprise,' hosts
     ```
 
 Replace `[masters]` and `[nodes]` sections with following content or modify
