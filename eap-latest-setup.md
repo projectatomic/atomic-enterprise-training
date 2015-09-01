@@ -18,6 +18,7 @@
         - [Ansible: inventory](#ansible-inventory)
     - [Run the installer (on the master)](#run-the-installer-on-the-master)
   - [Launch your very first pod](#launch-your-very-first-pod)
+  - [The Next Step](#the-next-step)
   - [Regions and Zones](#regions-and-zones)
     - [Scheduler and Defaults](#scheduler-and-defaults)
     - [The NodeSelector](#the-nodeselector)
@@ -452,6 +453,16 @@ services, scheduling, authentication and all sorts of other information follows.
     ```
     oc delete pod hello-atomic
     ```
+
+## The Next Step
+
+Congratulations, you now have a functional Atomic Enterprise cluster,
+capable of deploying and managing a wide variety of Docker formatted
+Linux containers.
+
+The Ansible-based installer above did a significant amount of work for
+us, and at this point we're going to step back and look at the high
+level concepts, then dive down into more examples.
 
 ## Regions and Zones
 
