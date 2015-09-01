@@ -209,16 +209,15 @@ Once your machines are built and you have verified DNS and network connectivity 
 should:
 
 [//]: # (TODO: What are the right channels??)
-[//]: # (TODO: Identify what is needed from rhel-server-7-ose-beta-rpms and what will be AE's equivalent)
 
-1. Configure yum / subscription manager as follows:
+1. Configure the base yum repositories as follows:
+
     ```
     subscription-manager register --auto-attach
     subscription-manager repos --disable="*"
     subscription-manager repos \
       --enable="rhel-7-server-rpms" \
-      --enable="rhel-7-server-extras-rpms" \
-      --enable="rhel-7-server-ose-3.0-rpms"
+      --enable="rhel-7-server-extras-rpms"
     ```
 
 1. Install rpms missing from minimal we are likely to need.
@@ -226,9 +225,10 @@ should:
     yum -y install deltarpm wget vim-enhanced net-tools bind-utils tmux git docker
     ```
 
-1. Install our atomic enterprise repo
+1. Install the preview Atomic Enterprise repo:
+
     ```
-    curl -o /etc/yum.repos.d/atomic-enterprise.repo http://mirror.ops.rhcloud.com/atomic/mirror/.atomic-enterprise-early-1/atomic-enterprise.repo
+    curl -o /etc/yum.repos.d/atomic-enterprise.repo http://mirror.ops.rhcloud.com/atomic/mirror/.atomic-enterprise-early-2/atomic-enterprise.repo
     ```
 
 1. Make sure docker storage is configured correctly before starting docker!
@@ -242,10 +242,10 @@ should:
 
     ```
     systemctl start docker
-    docker pull registry.access.redhat.com/openshift3/ose-haproxy-router
-    docker pull registry.access.redhat.com/openshift3/ose-deployer
-    docker pull registry.access.redhat.com/openshift3/ose-pod
-    docker pull registry.access.redhat.com/openshift3/ose-docker-registry
+    docker pull registry.access.redhat.com/aos3/aos-haproxy-router
+    docker pull registry.access.redhat.com/aos3/aos-deployer
+    docker pull registry.access.redhat.com/aos3/aos-pod
+    docker pull registry.access.redhat.com/aos3/aos-docker-registry
     ```
     It may be advisable to pull the following Docker images as well, since they are
     used during the various labs:
@@ -1003,7 +1003,7 @@ take a moment to look at what is going on at that level.
 
 On the node where the pod is running (`HOST`), look at the list of
 Docker containers with `docker ps` (in a `root` terminal) to see the
-bound ports.  We should see an `openshift3/ose-pod` container bound to
+bound ports.  We should see an `aos3/aos-pod` container bound to
 36061 on the host and bound to 8080 on the container, along with
 several other `ose-pod` containers.
 
@@ -1701,10 +1701,10 @@ something like the following on your connected machine:
 
 [//]: # (TODO: change image names?)
 
-    docker pull registry.access.redhat.com/openshift3/ose-haproxy-router
-    docker pull registry.access.redhat.com/openshift3/ose-deployer
-    docker pull registry.access.redhat.com/openshift3/ose-pod
-    docker pull registry.access.redhat.com/openshift3/ose-docker-registry
+    docker pull registry.access.redhat.com/aos3/aos-haproxy-router
+    docker pull registry.access.redhat.com/aos3/aos-deployer
+    docker pull registry.access.redhat.com/aos3/aos-pod
+    docker pull registry.access.redhat.com/aos3/aos-docker-registry
     docker pull atomicenterprise/hello-atomic
 
 This will fetch all of the images. You can then save them to a tarball:
@@ -1712,10 +1712,10 @@ This will fetch all of the images. You can then save them to a tarball:
 [//]: # (TODO: change image names?)
 
     docker save -o beta4-images.tar \
-    registry.access.redhat.com/openshift3/ose-haproxy-router \
-    registry.access.redhat.com/openshift3/ose-deployer \
-    registry.access.redhat.com/openshift3/ose-pod \
-    registry.access.redhat.com/openshift3/ose-docker-registry \
+    registry.access.redhat.com/aos3/aos-haproxy-router \
+    registry.access.redhat.com/aos3/aos-deployer \
+    registry.access.redhat.com/aos3/aos-pod \
+    registry.access.redhat.com/aos3/aos-docker-registry \
     atomicenterprise/hello-atomic
 
 **Note: On an SSD-equipped system this took ~2 min and uses 1.8GB of disk
