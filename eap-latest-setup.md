@@ -267,7 +267,16 @@ to repeatedly type passwords.
 
 If you already have the knowledge and ability to run Ansible from your
 workstation, or a separate server with the SSH private keys or agent
-forwarding, you can skip to the next section.
+forwarding, you can perform the Ansible runs from there.
+
+#### Clone the Atomic Enterprise/OpenShift Ansible git repo:
+
+```
+    git clone https://github.com/openshift/openshift-ansible
+```
+
+This installer is a shared effort between Atomic Enterprise and OpenShift,
+and now supports them both as differerent `deployment_type`.
 
 The following two steps detail how to prepare for Ansible from the
 master node (or you could choose to use a separate server).
@@ -280,12 +289,6 @@ master node (or you could choose to use a separate server).
     yum -y install http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo
     yum -y --enablerepo=epel install ansible
-    ```
-
-1. Clone the Atomic Enterprise Ansible repo:
-
-    ```
-    git clone https://github.com/projectatomic/atomic-enterprise-ansible.git
     ```
 
 ##### Ansible preparation: SSH
@@ -308,17 +311,20 @@ master node (or you could choose to use a separate server).
 
 ##### Ansible: inventory
 
-1. Edit the byo (bring your own) inventory file to include your hosts
+Edit the byo (bring your own) inventory file.  First, look for
+variable `deployment_type` and ensure it reads
+`deployment_type=atomic-enterprise`.
 
     ```
-    cd atomic-enterprise-ansible
-    vi inventory/byo/hosts
+    cd openshift-ansible
+    cp inventory/byo/hosts.example hosts
+    sed -i -e 's,^deployment_type,deployment_type=atomic-enterprise,' hosts
     ```
 
-    Replace `[masters]` and `[nodes]` sections with following content or modify
-    them according to your DNS environment.
+Replace `[masters]` and `[nodes]` sections with following content or modify
+them according to your DNS environment.
 
-    ```
+```
     [masters]
     ae-master.example.com
 
@@ -326,16 +332,16 @@ master node (or you could choose to use a separate server).
     ae-master.example.com openshift_node_labels="{'region': 'infra', 'zone': 'default'}"
     ae-node1.example.com openshift_node_labels="{'region': 'primary', 'zone': 'east'}"
     ae-node2.example.com openshift_node_labels="{'region': 'primary', 'zone': 'west'}"
-    ```
+```
 
-    - For now do not worry much about the information after
-      `openshift_node_labels=`. But do no omit it entirely.
+For now do not worry much about the information after
+`openshift_node_labels=`. But do no omit it entirely.
 
 ### Run the installer (on the master)
 
 1. Run ansible to set up the cluster
     ```
-    ansible-playbook -i inventory/byo/hosts playbooks/byo/config.yml
+    ansible-playbook -i hosts playbooks/byo/config.yml
     ```
 
 1. Do not move along unless this worked! Success looks (something) like this:
