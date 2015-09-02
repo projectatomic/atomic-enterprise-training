@@ -6,6 +6,22 @@ Atomic Enterprise provides a Docker registry that administrators may run inside
 the Atomic environment that will manage images "locally". Let's take a moment
 to set that up.
 
+This version of the training is variant of
+
+https://docs.openshift.org/latest/admin_guide/install/docker_registry.html
+
+You might find newer updates there.
+
+### Creating the registry
+We will use the `oadm` tool which supports administrative control
+over the cluster services.
+As the `root` user, run the following:
+
+```
+cd /etc/origin/master
+oadm registry --config=admin.kubeconfig  --credentials=openshift-registry.kubeconfig
+```
+
 ### Storage for the registry
 The registry stores docker images and metadata. If you simply deploy a pod
 with the registry, it will use an ephemeral volume that is destroyed once the
@@ -24,17 +40,9 @@ directory with:
 
     mkdir -p /mnt/registry
 
-### Creating the registry
-`oadm` again comes to our rescue with a handy installer for the
-registry. As the `root` user, run the following:
-
-[//]: # (TODO: fix the ca path)
-[//]: # (TODO: fix the image path)
-
-    oadm registry --create \
-    --credentials=/etc/origin/master/openshift-registry.kubeconfig \
-    --images='registry.access.redhat.com/openshift3/ose-${component}:latest' \
-    --selector="region=infra" --mount-host=/mnt/registry
+    oc volume deploymentconfigs/docker-registry \
+     --add --overwrite --name=registry-storage --mount-path=/mnt/registry \
+     --source='{"nfs": { "server": "<fqdn>", "path": "/path/to/export"}}'
 
 You'll get output like:
 
