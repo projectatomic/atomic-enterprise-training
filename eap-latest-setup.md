@@ -332,6 +332,9 @@ them according to your DNS environment.
     [masters]
     ae-master.example.com
 
+    [etcd]
+    ae-master.example.com
+
     [nodes]
     ae-master.example.com openshift_node_labels="{'region': 'infra', 'zone': 'default'}"
     ae-node1.example.com openshift_node_labels="{'region': 'primary', 'zone': 'east'}"
