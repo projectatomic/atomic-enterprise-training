@@ -586,7 +586,7 @@ choose. Note that, depending on your predicate configuration, you might end up
 with no possible nodes to choose. This is totally OK (although generally not
 desired).
 
-These default options are documented in the link above, but the quick overview
+These default options are documented in the link below, but the quick overview
 is:
 
 * Place pod on a node that has enough resources for it (duh)
@@ -677,7 +677,7 @@ So, if we have the following nodes and the following labels:
 * Node 3 -- "region":"primary"
 
 If we try to schedule a pod that has a `NodeSelector` of "region":"primary",
-then only Node 1 and Node 2 would be considered.
+then only Node 2 and Node 3 would be considered.
 
 OK, that takes care of the "region" part. What about the "zone" part?
 
@@ -1233,7 +1233,7 @@ is detected, an HAProxy pool is created. When a change in a route is detected,
 the pool is updated.
 
 This HAProxy pool ultimately contains all pods that are in a service. Which
-service? The service that corresponds to the `serviceName` directive that you
+service? The service that corresponds to the `spec.to.name` directive that you
 see above.
 
 You'll notice that the definition above specifies TLS edge termination. This
@@ -1302,7 +1302,7 @@ few moments (it may take up to a few minutes):
     NAME              READY     REASON    RESTARTS   AGE
     router-1-deploy   1/1       Running   0          21s
 
-In the above router creation command (`oadm router...`) we also specified
+In the router creation command (`oadm router...` in the above OpenShift docs) we also specified
 `--selector`. This flag causes a `nodeSelector` to be placed on all of the pods
 created. If you think back to our "regions" and "zones" conversation, the
 AE environment is currently configured with an *infra*structure region
@@ -1389,8 +1389,8 @@ In the JSON above:
 If we work from the route down to the pod:
 
 * The route for `hello-atomic.cloudapps.example.com` has an HAProxy pool
-* The pool is for any pods in the service whose ID is `hello-atomic-service`,
-    via the `serviceName` directive of the route.
+* The pool is for any pods in the service whose ID is `hello-atomic-service,
+     via the `spec.to.name` directive of the route.
 * The service `hello-atomic-service` includes every pod who has a label
     `name=hello-atomic`
 * There is a single pod with a single container that has the label
